@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 480px; margin: 2rem auto; text-align: center;">
+    <h2 style="color:var(--primary); margin-bottom:1.5rem;">Log Out</h2>
+    
+    <p style="margin-bottom: 1.5rem;">Are you sure you want to log out?</p>
+    
+    <form method="post" style="display: flex; gap: 1rem; justify-content: center;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Yes, Log Out</button>
+        <a href="{% url 'home' %}" class="btn" style="background: var(--surface);">Cancel</a>
+    </form>
+</div>
+{% endblock %}

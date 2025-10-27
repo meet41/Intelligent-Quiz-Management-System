@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="auth-container" style="max-width: 520px; margin: 2rem auto;">
+  <h2 style="text-align:center; color:var(--primary); margin-bottom:1.5rem;">Create your account</h2>
+  <form method="post" autocomplete="on" style="box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}
+          <div style="font-size:.85rem; color:var(--text-light);">{{ field.help_text }}</div>
+        {% endif %}
+        {% for error in field.errors %}
+          <div style="color:var(--danger); font-size:.9rem;">{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary" style="width:100%; margin-top:0.5rem;">Create account</button>
+  </form>
+  <p style="text-align:center; margin-top:1.5rem;">Already have an account? <a href="{% url 'login' %}" style="color:var(--primary); font-weight:500;">Login</a></p>
+</div>
+{% endblock %}

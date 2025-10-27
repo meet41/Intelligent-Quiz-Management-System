@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 3rem;">
+    <h2 style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;">Available Quizzes</h2>
+    <p style="color: var(--text); opacity: 0.8; max-width: 600px; margin: 0 auto;">
+        Test your knowledge with our collection of quizzes. Each quiz is designed to challenge and help you learn.
+    </p>
+</div>
+
+<!-- Category Filter -->
+<div class="category-filter" style="margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem;">Categories</h3>
+    <div class="category-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+        <a href="{% url 'quiz_list' %}" class="category-card {% if not current_category %}active{% endif %}" 
+           style="text-decoration: none; padding: 1rem; border-radius: 8px; background: var(--surface); display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-globe" style="color: var(--primary); font-size: 1.5rem;"></i>
+            <div>
+                <h4 style="margin: 0;">All Categories</h4>
+                <p style="margin: 0; font-size: 0.875rem; opacity: 0.8;">View all quizzes</p>
+            </div>
+        </a>
+        {% for category in categories %}
+        <a href="{% url 'quiz_list' %}?category={{ category.id }}" 
+           class="category-card {% if current_category == category.id|stringformat:'s' %}active{% endif %}"
+           style="text-decoration: none; padding: 1rem; border-radius: 8px; background: var(--surface); display: flex; align-items: center; gap: 1rem;">
+            <i class="{{ category.icon|default:'fas fa-folder' }}" style="color: var(--primary); font-size: 1.5rem;"></i>
+            <div>
+                <h4 style="margin: 0;">{{ category.name }}</h4>
+                <p style="margin: 0; font-size: 0.875rem; opacity: 0.8;">{{ category.description|default:'Browse quizzes' }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="quiz-grid">
+    {% for quiz in quizzes %}
+        <article class="quiz-card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div style="background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                    </svg>
+                </div>
+                <h3 style="margin: 0; font-size: 1.25rem;">{{ quiz.title }}</h3>
+            </div>
+            
+            <p style="color: var(--text); opacity: 0.8; margin-bottom: 1.5rem;">
+                {{ quiz.description|default:'Challenge yourself with this quiz!' }}
+            </p>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 0.875rem; color: var(--text); opacity: 0.7;">
+                        {% if quiz.question_count %}
+                            {{ quiz.question_count }} questions
+                        {% endif %}
+                    </span>
+                </div>
+                <a href="{% url 'take_quiz' quiz.id %}" class="btn" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    Start Quiz
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14m-7-7l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+        </article>
+    {% empty %}
+        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; background: white; border-radius: var(--radius);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" style="opacity: 0.5; margin-bottom: 1rem;">
+                <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+            </svg>
+            <h3 style="margin: 0 0 0.5rem; color: var(--text);">No Quizzes Available</h3>
+            <p style="color: var(--text); opacity: 0.8;">Check back later for new quizzes!</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
