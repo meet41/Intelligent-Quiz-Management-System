@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
-from PIL import Image
+try:
+    from PIL import Image  # type: ignore
+except Exception:
+    Image = None
 import os
 from django.conf import settings
 
@@ -21,7 +24,7 @@ class Profile(models.Model):
 
         super().save(*args, **kwargs)
 
-        if self.image:
+        if self.image and Image is not None:
             try:
                 # Only process the image if it exists on disk
                 img_path = self.image.path

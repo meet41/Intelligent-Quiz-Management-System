@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+    {% extends 'base.html' %}
 
 {% block content %}
 <div class="profile-container">
@@ -31,7 +31,7 @@
                                 <circle cx="12" cy="13" r="4"/>
                             </svg>
                         </label>
-                        {{ p_form.image }}
+                        <span class="sr-only">{{ p_form.image }}</span>
                     </div>
 
                     <div style="margin: 2rem 0;">
@@ -58,7 +58,10 @@
                             {{ p_form.bio }}
                         </div>
                     </div>
-                    <button type="submit" class="btn">Save Changes</button>
+                    <div class="profile-actions">
+                        <button type="submit" class="btn">Save Changes</button>
+                        <a href="{% url 'logout' %}" class="btn btn-outline" onclick="return confirm('Are you sure you want to logout?')">Logout</a>
+                    </div>
                 </div>
             </form>
         </div>
@@ -135,6 +138,10 @@
         text-align: center;
         margin-bottom: 3rem;
         animation: fadeIn 0.5s ease-out;
+        background: linear-gradient(135deg, rgba(99,102,241,.10), rgba(129,140,248,.06));
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1rem;
     }
 
     .profile-header h1 {
@@ -156,7 +163,8 @@
     }
 
     .profile-card {
-        background: white;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
         border-radius: 1rem;
         padding: 2rem;
         box-shadow: var(--card-shadow);
@@ -212,12 +220,19 @@
         margin-bottom: 1.5rem;
     }
 
-    .form-group label {
+    /* Ensure stacked (non-floating) labels inside the profile form */
+    .profile-form .form-group { position: static; }
+    .profile-form .form-group label {
+        position: static !important;
         display: block;
-        margin-bottom: 0.5rem;
+        margin: 0 0 0.5rem 0;
+        padding: 0;
+        background: transparent;
         color: var(--text);
         font-weight: 500;
+        transform: none !important;
         transition: color 0.2s ease;
+        pointer-events: auto;
     }
 
     .form-group input,
@@ -228,14 +243,15 @@
         border-radius: 0.75rem;
         font-size: 1rem;
         transition: all 0.3s ease;
-        background: var(--bg);
+        background: var(--bg-card);
+        color: var(--text);
     }
 
     .form-group input:focus,
     .form-group textarea:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+        box-shadow: var(--shadow-highlight);
         transform: translateY(-2px);
     }
 
@@ -283,7 +299,8 @@
     }
 
     .stat-card {
-        background: white;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
         padding: 1.5rem;
         border-radius: 1rem;
         text-align: center;
@@ -311,7 +328,8 @@
         justify-content: space-between;
         align-items: center;
         padding: 1rem;
-        background: var(--bg);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
         border-radius: 0.75rem;
         margin-bottom: 1rem;
         transition: all 0.3s ease;
@@ -320,6 +338,20 @@
     .activity-item:hover {
         transform: translateX(5px);
         box-shadow: var(--card-shadow);
+        background: var(--bg);
+    }
+
+    /* Visually hidden but accessible (hides default Django clearable file widget text) */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
 
     .quiz-score {
@@ -327,6 +359,15 @@
         padding: 0.5rem 1rem;
         border-radius: 2rem;
     }
+
+    /* Action buttons row inside profile card */
+    .profile-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1.75rem;
+    }
+    .profile-actions .btn { min-width: 160px; }
 
     .score-high {
         background: rgba(16, 185, 129, 0.1);

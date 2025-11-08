@@ -10,24 +10,19 @@ from .services.ai_generation import generate_questions
 
 
 def quiz_list(request):
-	categories = Category.objects.all()
-	category_id = request.GET.get('category')
-
-	quizzes = Quiz.objects.filter(is_published=True)
-	if category_id:
-		quizzes = quizzes.filter(category_id=category_id)
-	quizzes = quizzes.order_by('-created_at')
-	# Track which quizzes the current user has attempted
-	attempted_ids = set()
-	if request.user.is_authenticated:
-		attempted_ids = set(Attempt.objects.filter(user=request.user).values_list('quiz_id', flat=True))
-
-	return render(request, 'quizez/quiz_list.html', {
-		'quizzes': quizzes,
-		'categories': categories,
-		'current_category': category_id,
-		'attempted_ids': attempted_ids,
-	})
+    categories = Category.objects.all()
+    category_id = request.GET.get('category')
+    
+    quizzes = Quiz.objects.filter(is_published=True)
+    if category_id:
+        quizzes = quizzes.filter(category_id=category_id)
+    quizzes = quizzes.order_by('-created_at')
+    
+    return render(request, 'quizez/quiz_list.html', {
+        'quizzes': quizzes,
+        'categories': categories,
+        'current_category': category_id
+    })
 
 
 def subcategory_select(request, category_slug: str):
@@ -52,7 +47,6 @@ def subcategory_select(request, category_slug: str):
 		'q': q,
 		'difficulties': difficulties,
 		'question_options': question_options,
-		'has_subcategories': category.subcategories.exists(),
 	})
 
 
@@ -69,18 +63,15 @@ def start_quiz(request, category_slug: str):
 	num_questions = request.POST.get('num_questions')
 
 	# Validate inputs
-	has_subcats = category.subcategories.exists()
-	subcategory = None
-	if subcategory_id:
-		try:
-			subcategory = Subcategory.objects.get(id=int(subcategory_id), category=category)
-		except Exception:
-			subcategory = None
+	try:
+		subcategory = Subcategory.objects.get(id=int(subcategory_id), category=category)
+	except Exception:
+		subcategory = None
 
 	valid_difficulties = {Quiz.DIFFICULTY_EASY, Quiz.DIFFICULTY_MEDIUM, Quiz.DIFFICULTY_HARD}
 	valid_counts = {'5', '10', '15', '20'}
 	errors = []
-	if has_subcats and not subcategory:
+	if not subcategory:
 		errors.append('Please choose a subcategory.')
 	if difficulty not in valid_difficulties:
 		errors.append('Please choose a difficulty level.')
@@ -97,17 +88,16 @@ def start_quiz(request, category_slug: str):
 	# Store selection for the generation step (Task 2.3)
 	request.session['pending_quiz_request'] = {
 		'category_slug': category.slug,
-		'subcategory_id': (subcategory.id if subcategory else None),
+		'subcategory_id': subcategory.id,
 		'difficulty': difficulty,
 		'num_questions': int(num_questions),
 		'user_id': request.user.id,
 	}
 
-	if subcategory:
-		label = f"{category.name} / {subcategory.name}"
-	else:
-		label = category.name
-	messages.success(request, f"Starting quiz generation for {label} - {difficulty.title()} • {num_questions} questions.")
+	messages.success(
+		request,
+		f"Starting quiz generation for {category.name} / {subcategory.name} - {difficulty.title()} • {num_questions} questions."
+	)
 	# For now, send the user back to quiz list; Task 2.3 will pick from the session and generate.
 	return redirect('generate_ai_quiz', category_slug=category_slug)
 
@@ -123,12 +113,12 @@ def generate_ai_quiz(request, category_slug: str):
 			subcategory = Subcategory.objects.get(id=int(data['subcategory_id']), category=category)
 		except Exception:
 			subcategory = None
-	# Allow category-only flow when this category has no subcategories
-	if not subcategory and category.subcategories.exists():
+
+	if not subcategory:
 		messages.error(request, 'No pending quiz request found. Please select options again.')
 		return redirect('subcategory_select', category_slug=category_slug)
 
-	topic = f"{category.name} - {subcategory.name}" if subcategory else category.name
+	topic = f"{category.name} - {subcategory.name}"
 	difficulty = data.get('difficulty') or Quiz.DIFFICULTY_MEDIUM
 	num_questions = int(data.get('num_questions') or 5)
 
@@ -149,10 +139,9 @@ def generate_ai_quiz(request, category_slug: str):
 		# If we have items, auto-create a quiz and import questions so the user can start immediately
 		items = (result.get('parsed') or {}).get('items') or []
 		if items:
-			title_part = subcategory.name if subcategory else category.name
 			quiz = Quiz(
-				title=f"{title_part} - {difficulty.title()} (AI)",
-				description=f"Auto-generated quiz for {category.name}{' / ' + subcategory.name if subcategory else ''}",
+				title=f"{subcategory.name} - {difficulty.title()} (AI)",
+				description=f"Auto-generated quiz for {category.name} / {subcategory.name}",
 				category=category,
 				subcategory=subcategory,
 				difficulty=difficulty,
@@ -234,19 +223,10 @@ def quiz_result(request, attempt_id: int):
 	answers = attempt.answers.select_related('question', 'selected_choice').all()
 	# Compute correct count for display (score is stored as percent)
 	correct_count = answers.filter(is_correct_cached=True).count()
-	# Format time taken (fallback to completed_at - started_at if missing)
-	secs = attempt.time_taken
-	if secs is None and attempt.started_at and attempt.completed_at:
-		secs = int((attempt.completed_at - attempt.started_at).total_seconds())
-	if secs is None:
-		secs = 0
-	m, s = divmod(int(secs), 60)
-	time_taken_display = f"{m:02d}:{s:02d}"
 	return render(request, 'quizez/quiz_result.html', {
 		'attempt': attempt,
 		'answers': answers,
 		'correct_count': correct_count,
-		'time_taken_display': time_taken_display,
 	})
 
 # Create your views here.
@@ -275,10 +255,8 @@ def quiz_session(request, quiz_id: int):
 		return redirect('quiz_result', attempt_id=attempt.id)
 
 	# Enforce time limit (server-side guard)
-	# Dynamic time limit by question count: 5→5m, 10→10m, 15→12m, 20→15m; fallback to quiz.time_limit
-	minutes_map = {5: 5, 10: 10, 15: 12, 20: 15}
-	minutes = minutes_map.get(total, int(getattr(quiz, 'time_limit', 30)))
-	time_limit_seconds = max(1, int(minutes) * 60)
+	# time_limit is in minutes; compute deadline from started_at
+	time_limit_seconds = max(1, int(getattr(quiz, 'time_limit', 30)) * 60)
 	deadline = attempt.started_at + timezone.timedelta(seconds=time_limit_seconds)
 	now = timezone.now()
 	if now >= deadline:

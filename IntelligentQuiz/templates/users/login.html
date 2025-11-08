@@ -1,34 +1,108 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="auth-container" style="max-width: 480px; margin: 2rem auto;">
-    <h2 style="text-align:center; color:var(--primary); margin-bottom:1.5rem;">Login to Intelligent Quiz</h2>
-    <form method="post" autocomplete="on" style="box-shadow:0 2px 8px rgba(0,0,0,0.07);">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="id_username">Username or Email</label>
-            {{ form.username }}
-        </div>
-        <div class="form-group">
-            <label for="id_password">Password</label>
-            {{ form.password }}
-        </div>
-        <div class="form-group" style="display:flex; align-items:center; justify-content:space-between;">
-            <label style="display:flex; align-items:center; gap:0.5rem;">
-                <input type="checkbox" name="remember" id="remember" style="width:18px; height:18px;"> Remember Me
-            </label>
-            <a href="{% url 'password_reset' %}" style="color:var(--primary); font-size:0.95rem;">Forgot password?</a>
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Login</button>
-    </form>
-    <p style="text-align:center; margin-top:1.5rem;">Don't have an account? <a href="{% url 'register' %}" style="color:var(--primary); font-weight:500;">Register</a></p>
-</div>
+<section class="auth-page">
+    <div class="auth-header">
+        <h2>Login to Intelligent Quiz</h2>
+    </div>
+    <div class="auth-card">
+        <form method="post" autocomplete="on" novalidate>
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_username">Username or Email</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="error">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_password">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="error">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="form-row between">
+                <a href="{% url 'password_reset' %}" class="link">Forgot password?</a>
+                <label class="check">
+                    <input type="checkbox" name="remember_me" id="remember_me" {% if request.POST.remember_me %}checked{% endif %}>
+                    <span>Remember Me</span>
+                </label>
+            </div>
+            <button type="submit" class="btn" style="width:100%; margin-top:1rem;">Login</button>
+        </form>
+    </div>
+    <p class="auth-foot">Don't have an account? <a class="link" href="{% url 'register' %}">Register</a></p>
+</section>
+
+<style>
+    .auth-page { max-width: 520px; margin: 2.5rem auto 2rem; padding: 0 1rem; }
+    .auth-header { text-align:center; margin-bottom: 1rem; padding: 1rem; border:1px solid var(--border); border-radius: var(--radius-lg); background: linear-gradient(135deg, rgba(99,102,241,.10), rgba(129,140,248,.06)); }
+    .auth-header h2 { margin:0; color: var(--primary); font-size: clamp(1.5rem, 2vw, 1.8rem); }
+    .auth-card { background: var(--bg-card); border:1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm); }
+    .auth-card form { margin: 0; }
+    .form-group { margin-bottom: 1rem; position: static; }
+    /* Reset floating-label rules from global styles for this page */
+    .auth-card .form-group label {
+        position: static !important;
+        top: auto; left: auto;
+        display:block;
+        margin: 0 0 .4rem;
+        padding: 0;
+        background: transparent;
+        color: var(--text);
+        font-weight: 500;
+        pointer-events: auto;
+        transform: none !important;
+    }
+    .form-row { display:flex; align-items:center; gap: .75rem; }
+    .form-row.between { justify-content: space-between; }
+    .link { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .link:hover { text-decoration: underline; }
+    .check { display:flex; align-items:center; gap:.5rem; color: var(--text); }
+    .check input { width: 18px; height: 18px; accent-color: var(--primary); }
+    .auth-foot { text-align:center; margin-top: 1rem; color: var(--text); }
+    .error { color: #ef4444; font-size: .98em; margin-top: .4em; }
+
+    /* Ensure input text, caret, and placeholder are readable on dark background */
+    .auth-card input[type="text"],
+    .auth-card input[type="email"],
+    .auth-card input[type="password"] {
+        color: var(--text);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 0.6em 0.8em;
+        font-size: 1em;
+        box-sizing: border-box;
+        caret-color: var(--primary);
+    }
+    .auth-card input::placeholder { color: var(--text-light); opacity: .8; }
+    .auth-card input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: var(--shadow-highlight);
+    }
+    /* Fix Chrome autofill in dark mode */
+    input:-webkit-autofill,
+    input:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--text);
+        -webkit-box-shadow: 0 0 0px 1000px var(--bg-card) inset;
+        box-shadow: 0 0 0px 1000px var(--bg-card) inset;
+        transition: background-color 9999s ease-in-out 0s;
+    }
+    @media (max-width: 480px){
+        .form-row.between { flex-direction: column; align-items: flex-start; gap: .5rem; }
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function() {
-            form.classList.add('loading');
-        });
+        const form = document.querySelector('.auth-card form');
+        form?.addEventListener('submit', () => form.classList.add('loading'));
     });
 </script>
 {% endblock %}

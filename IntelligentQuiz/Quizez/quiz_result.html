@@ -2,36 +2,14 @@
 
 {% block content %}
 <div style="max-width: 800px; margin: 0 auto;">
-        <style>
-            .score-ring { width: 140px; height: 140px; border-radius: 50%; border-width: 8px; border-style: solid; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; }
-            .ring-success { border-color: var(--success); }
-            .ring-warn { border-color: var(--warning); }
-            .ring-danger { border-color: var(--danger); }
-        </style>
     <div style="text-align: center; margin-bottom: 3rem;">
         <h2 style="font-size: 2rem; margin-bottom: 1rem;">{{ attempt.quiz.title }}</h2>
 
         {% with percentage=attempt.score %}
         <div style="margin: 2rem 0;">
-            {% if percentage >= 80 %}
-                        <div class="score-ring ring-success">
-            {% elif percentage >= 60 %}
-                        <div class="score-ring ring-warn">
-            {% else %}
-                        <div class="score-ring ring-danger">
-            {% endif %}
+            <div style="width: 140px; height: 140px; border-radius: 50%; border: 8px solid {% if percentage >= 80 %}var(--success){% elif percentage >= 60 %}#f59e0b{% else %}var(--danger){% endif %}; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700;">
                 {{ percentage }}%
             </div>
-                        <div style="margin-top:.5rem; font-weight:600;">
-                                Grade:
-                                <span style="padding:.2rem .6rem; border-radius:.5rem; border:1px solid var(--border); background: var(--bg-card); color: var(--text);">
-                                    {% if percentage > 80 %}A
-                                    {% elif percentage >= 60 %}B
-                                    {% elif percentage >= 30 %}C
-                                    {% else %}D{% if percentage < 25 %} (Fail){% endif %}
-                                    {% endif %}
-                                </span>
-                        </div>
             <div style="margin-top: .75rem; color: var(--text); opacity: .8;">
                 Correct: <strong>{{ correct_count }}</strong> / {{ attempt.total }}
             </div>
@@ -53,7 +31,7 @@
     </div>
 
     <details style="margin-bottom: 2rem;">
-        <summary style="padding: 1rem; background: var(--bg-card); border-radius: var(--radius); cursor: pointer; user-select: none;">
+    <summary style="padding: 1rem; background: var(--bg-card); border-radius: var(--radius); cursor: pointer; user-select: none;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <span style="font-weight: 500;">Review Answers</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(0deg); transition: transform 0.3s;">
@@ -62,9 +40,9 @@
             </div>
         </summary>
         
-    <div style="margin-top: 1rem;">
+        <div style="margin-top: 1rem;">
             {% for a in answers %}
-        <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                     <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
                         <span style="background: var(--bg); color: var(--text); width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500; flex-shrink: 0;">
                             {{ forloop.counter }}
@@ -123,15 +101,12 @@
         </div>
     </details>
 
-    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-        <a href="{% url 'quiz_session' attempt.quiz.id %}" class="btn">
-            Retake Quiz
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="{% url 'quiz_session' attempt.quiz.id %}" class="btn" style="background: var(--text);">
+            Try Again
         </a>
-        <a href="{% url 'quiz_list' %}" class="btn btn-outline">
+        <a href="{% url 'quiz_list' %}" class="btn">
             More Quizzes
-        </a>
-        <a href="{% url 'home' %}" class="btn btn-outline">
-            Back to Dashboard
         </a>
     </div>
 </div>

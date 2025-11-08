@@ -1,4 +1,4 @@
-    {% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="profile-container">
@@ -58,10 +58,7 @@
                             {{ p_form.bio }}
                         </div>
                     </div>
-                    <div class="profile-actions">
-                        <button type="submit" class="btn">Save Changes</button>
-                        <a href="{% url 'logout' %}" class="btn btn-outline" onclick="return confirm('Are you sure you want to logout?')">Logout</a>
-                    </div>
+                    <button type="submit" class="btn">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -220,19 +217,12 @@
         margin-bottom: 1.5rem;
     }
 
-    /* Ensure stacked (non-floating) labels inside the profile form */
-    .profile-form .form-group { position: static; }
-    .profile-form .form-group label {
-        position: static !important;
+    .form-group label {
         display: block;
-        margin: 0 0 0.5rem 0;
-        padding: 0;
-        background: transparent;
+        margin-bottom: 0.5rem;
         color: var(--text);
         font-weight: 500;
-        transform: none !important;
         transition: color 0.2s ease;
-        pointer-events: auto;
     }
 
     .form-group input,
@@ -359,15 +349,6 @@
         padding: 0.5rem 1rem;
         border-radius: 2rem;
     }
-
-    /* Action buttons row inside profile card */
-    .profile-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-top: 1.75rem;
-    }
-    .profile-actions .btn { min-width: 160px; }
 
     .score-high {
         background: rgba(16, 185, 129, 0.1);

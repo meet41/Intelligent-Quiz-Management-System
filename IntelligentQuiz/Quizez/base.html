@@ -6,8 +6,9 @@
     <title>Intelligent Quiz - {% block title %}Welcome{% endblock %}</title>
     {% load static %}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link rel="icon" type="image/png" href="{% static 'img/default-profile.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -15,7 +16,7 @@
         <div class="container">
             <h1>
                 <a href="{% url 'home' %}" style="display:flex; align-items:center; gap:.5rem;">
-                    <img src="{% static 'img/logo.png' %}" alt="Intelligent Quiz" style="width:32px; height:32px; border-radius:6px; object-fit:cover;" onerror="this.style.display='none'">
+                    <img src="{% static 'img/default-profile.png' %}" alt="Intelligent Quiz" style="width:32px; height:32px; border-radius:6px; object-fit:cover;" onerror="this.style.display='none'">
                     <span>Intelligent Quiz</span>
                 </a>
             </h1>
@@ -80,19 +81,58 @@
                             {% endif %}
                             {{ message }}
                         </div>
-                    </li>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% endif %}
         {% block content %}{% endblock %}
     </main>
 
-    <footer style="background: white; padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border);">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; text-align: center; color: var(--text);">
-            <p>&copy; 2024 Intelligent Quiz. All rights reserved.</p>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Intelligent Quiz</h3>
+                <p>Test your knowledge, challenge yourself, and learn something new every day.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul class="no-bullets">
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'quiz_list' %}">Quizzes</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'profile' %}">Profile</a></li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}">Login</a></li>
+                        <li><a href="{% url 'register' %}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Categories</h4>
+                <ul class="no-bullets">
+                    <li><a href="#">Academic</a></li>
+                    <li><a href="#">Entertainment</a></li>
+                    <li><a href="#">General Knowledge</a></li>
+                    <li><a href="#">Technology</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <ul class="no-bullets">
+                    <li><a href="mailto:support@intelligentquiz.com">support@intelligentquiz.com</a></li>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Intelligent Quiz. All rights reserved. — Developer: 
+                <a href="https://github.com/meet41" target="_blank" rel="noopener noreferrer">Meet Patel</a>
+            </p>
         </div>
     </footer>
 
-    <script src="{% static 'js/scripts.js' %}" defer></script>
+    <script src="{% static 'js/scripts.js' %}" defer></script>  
 </body>
 </html>
