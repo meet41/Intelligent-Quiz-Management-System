@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;">{{ quiz.title }}</h2>
+        <p style="color: var(--text); opacity: 0.8;">{{ quiz.description }}</p>
+    </div>
+
+    <form method="post" id="quizForm">
+        {% csrf_token %}
+        <div class="question-list">
+            {% for q in questions %}
+                <li style="position: relative;">
+                    <span style="position: absolute; top: -1rem; left: -1rem; background: var(--primary); color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500;">
+                        {{ forloop.counter }}
+                    </span>
+                    
+                    <div class="question-text">
+                        {{ q.text }}
+                    </div>
+
+                    {% if q.image %}
+                        <div style="margin: 1rem 0; text-align: center;">
+                            <img src="{{ q.image.url }}" alt="Question image" style="max-width: 100%; border-radius: var(--radius); box-shadow: 0 2px 4px rgba(0,0,0,0.1);"/>
+                        </div>
+                    {% endif %}
+
+                    <ul class="choice-list">
+                        {% for c in q.choices.all %}
+                            <li>
+                                <label>
+                                    <input type="radio" name="question_{{ q.id }}" value="{{ c.id }}" required>
+                                    <span style="margin-left: 0.5rem;">{{ c.text }}</span>
+                                </label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 3rem; display: flex; justify-content: space-between; align-items: center;">
+            <div id="progress" style="color: var(--text); opacity: 0.8;">
+                <span id="answeredCount">0</span> of {{ questions|length }} questions answered
+            </div>
+            <button type="submit" class="btn" id="submitBtn" disabled style="opacity: 0.5; transition: all 0.2s;">
+                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                    Submit Quiz
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14m-7-7l7 7-7 7"/>
+                    </svg>
+                </span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('quizForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressText = document.getElementById('answeredCount');
+        const totalQuestions = {{ questions|length }};
+        let answeredQuestions = 0;
+
+        // Track answered questions
+        form.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const questionId = this.name;
+                if (!radio.dataset.counted) {
+                    answeredQuestions++;
+                    radio.dataset.counted = 'true';
+                    
+                    // Update progress
+                    progressText.textContent = answeredQuestions;
+                    
+                    // Enable submit button if all questions answered
+                    if (answeredQuestions === totalQuestions) {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                    }
+                }
+
+                // Animate the selection
+                const labels = this.closest('.choice-list').querySelectorAll('label');
+                labels.forEach(label => {
+                    label.style.transition = 'all 0.2s';
+                    if (label.contains(this)) {
+                        label.style.background = 'var(--bg)';
+                        label.style.borderColor = 'var(--primary)';
+                    } else {
+                        label.style.background = '';
+                        label.style.borderColor = 'var(--border)';
+                    }
+                });
+            });
+        });
+
+        // Confirm before submitting
+        form.addEventListener('submit', function(e) {
+            if (answeredQuestions < totalQuestions) {
+                e.preventDefault();
+                alert('Please answer all questions before submitting.');
+                return false;
+            }
+            
+            return true;
+        });
+    });
+</script>
+{% endblock %}

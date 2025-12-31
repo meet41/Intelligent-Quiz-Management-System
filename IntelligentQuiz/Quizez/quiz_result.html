@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+        <style>
+            .score-ring { width: 140px; height: 140px; border-radius: 50%; border-width: 8px; border-style: solid; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; }
+            .ring-success { border-color: var(--success); }
+            .ring-warn { border-color: var(--warning); }
+            .ring-danger { border-color: var(--danger); }
+        </style>
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-size: 2rem; margin-bottom: 1rem;">{{ attempt.quiz.title }}</h2>
+
+        {% with percentage=attempt.score %}
+        <div style="margin: 2rem 0;">
+            {% if percentage >= 80 %}
+                        <div class="score-ring ring-success">
+            {% elif percentage >= 60 %}
+                        <div class="score-ring ring-warn">
+            {% else %}
+                        <div class="score-ring ring-danger">
+            {% endif %}
+                {{ percentage }}%
+            </div>
+                        <div style="margin-top:.5rem; font-weight:600;">
+                                Grade:
+                                <span style="padding:.2rem .6rem; border-radius:.5rem; border:1px solid var(--border); background: var(--bg-card); color: var(--text);">
+                                    {% if percentage > 80 %}A
+                                    {% elif percentage >= 60 %}B
+                                    {% elif percentage >= 30 %}C
+                                    {% else %}D{% if percentage < 25 %} (Fail){% endif %}
+                                    {% endif %}
+                                </span>
+                        </div>
+            <div style="margin-top: .75rem; color: var(--text); opacity: .8;">
+                Correct: <strong>{{ correct_count }}</strong> / {{ attempt.total }}
+            </div>
+            <div style="margin-top: .25rem; color: var(--text); opacity: .8;">
+                Time taken: <strong>{{ time_taken_display }}</strong>
+            </div>
+
+            <p style="font-size: 1.25rem; margin-top: 1rem;">
+                {% if percentage >= 80 %}
+                    <span style="color: var(--success)">Excellent!</span>
+                {% elif percentage >= 60 %}
+                    <span style="color: #f59e0b">Good effort!</span>
+                {% else %}
+                    <span style="color: var(--danger)">Keep practicing!</span>
+                {% endif %}
+            </p>
+        </div>
+        {% endwith %}
+    </div>
+
+    <details style="margin-bottom: 2rem;">
+        <summary style="padding: 1rem; background: var(--bg-card); border-radius: var(--radius); cursor: pointer; user-select: none;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 500;">Review Answers</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(0deg); transition: transform 0.3s;">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+        </summary>
+        
+    <div style="margin-top: 1rem;">
+            {% for q,a in review_items %}
+        <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <span style="background: var(--bg); color: var(--text); width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500; flex-shrink: 0;">
+                            {{ forloop.counter }}
+                        </span>
+                        <div style="font-weight: 500;">{{ q.text }}</div>
+                    </div>
+
+                    <div style="margin-left: 3rem;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <span style="color: var(--text); opacity: 0.7;">Your answer:</span>
+                            {% if a %}
+                            {% if a.is_correct %}
+                            <div style="padding: 0.75rem; border-radius: var(--radius); margin-top: 0.5rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35);">
+                                {% if a.selected_choice %}
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                                            <path d="M20 6L9 17l-5-5"/>
+                                        </svg>
+                                        {{ a.selected_choice.text }}
+                                    </div>
+                                {% else %}
+                                    <em>No answer selected</em>
+                                {% endif %}
+                            </div>
+                            {% else %} {# answered but incorrect #}
+                            <div style="padding: 0.75rem; border-radius: var(--radius); margin-top: 0.5rem; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35);">
+                                {% if a.selected_choice %}
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
+                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                        </svg>
+                                        {{ a.selected_choice.text }}
+                                    </div>
+                                {% else %}
+                                    <em>No answer selected</em>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div style="padding: 0.75rem; border-radius: var(--radius); margin-top: 0.5rem; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);">
+                                <em>Skipped</em>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <span style="color: var(--text); opacity: 0.7;">Correct answer:</span>
+                            <div style="padding: 0.75rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius); margin-top: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                                        <path d="M20 6L9 17l-5-5"/>
+                                    </svg>
+                                    {{ q.correct_choice.text }}
+                                </div>
+                            </div>
+                        </div>
+                        {% if a and not a.is_correct %}
+                        <div data-answer-id="{{ a.id }}" data-url="{% url 'answer_explanation' a.id %}" class="explain-wrap" style="margin-top: .75rem;">
+                            <button type="button" class="btn btn-outline explain-btn">Explain</button>
+                            <div class="explain-panel" style="display:none; margin-top:.5rem; padding: .9rem; border:1px solid var(--border); background: var(--bg-card); border-radius: var(--radius);">
+                                <div class="explain-loading" style="opacity:.8;">Loading explanation…</div>
+                                <div class="explain-content" style="display:none;">
+                                    <div class="explain-text" style="margin-bottom:.5rem;"></div>
+                                    <div class="explain-links" style="margin-top:.5rem;"></div>
+                                    <div class="explain-feedback" style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center;">
+                                        <span style="opacity:.7;">Was this helpful?</span>
+                                        <button type="button" class="btn btn-sm btn-outline fb-helpful">Helpful</button>
+                                        <button type="button" class="btn btn-sm btn-outline fb-not">Not helpful</button>
+                                        <span class="fb-counts" style="margin-left:.5rem; opacity:.7;"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </details>
+
+    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'quiz_session' attempt.quiz.id %}" class="btn">
+            Retake Quiz
+        </a>
+        <a href="{% url 'quiz_list' %}" class="btn btn-outline">
+            More Quizzes
+        </a>
+        <a href="{% url 'home' %}" class="btn btn-outline">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const details = document.querySelector('details');
+        const arrow = details.querySelector('svg');
+        
+        details.addEventListener('toggle', function() {
+            if (this.open) {
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        });
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        document.querySelectorAll('.explain-wrap').forEach(wrap => {
+            const btn = wrap.querySelector('.explain-btn');
+            const panel = wrap.querySelector('.explain-panel');
+            const loading = panel.querySelector('.explain-loading');
+            const content = panel.querySelector('.explain-content');
+            const text = panel.querySelector('.explain-text');
+            const links = panel.querySelector('.explain-links');
+            const counts = panel.querySelector('.fb-counts');
+            const fbYes = panel.querySelector('.fb-helpful');
+            const fbNo = panel.querySelector('.fb-not');
+
+            let loaded = false;
+
+            btn.addEventListener('click', async () => {
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                if (panel.style.display === 'none') return;
+                if (loaded) return; // don't refetch
+                loading.style.display = 'block';
+                content.style.display = 'none';
+                const answerId = wrap.getAttribute('data-answer-id');
+                try {
+                    const endpoint = wrap.getAttribute('data-url');
+                    const res = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await res.json();
+                    if (!data.ok) throw new Error(data.error || 'Failed to load');
+                    text.textContent = data.explanation || 'No explanation available.';
+                    links.innerHTML = '';
+                    if (Array.isArray(data.resources) && data.resources.length) {
+                        const ul = document.createElement('ul');
+                        data.resources.forEach(r => {
+                            const li = document.createElement('li');
+                            const a = document.createElement('a');
+                            a.href = r.url; a.textContent = r.title || r.url; a.target = '_blank';
+                            li.appendChild(a); ul.appendChild(li);
+                        });
+                        links.appendChild(ul);
+                    }
+                    counts.textContent = `(${data.helpful || 0} helpful, ${data.not_helpful || 0} not)`;
+                    loading.style.display = 'none';
+                    content.style.display = 'block';
+                    loaded = true;
+                } catch (e) {
+                    loading.textContent = 'Failed to load explanation.';
+                }
+            });
+
+            async function sendFeedback(action) {
+                const csrftoken = getCookie('csrftoken');
+                const endpoint = wrap.getAttribute('data-url');
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'X-CSRFToken': csrftoken,
+                        'Accept': 'application/json'
+                    },
+                    body: new URLSearchParams({ action })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    counts.textContent = `(${data.helpful || 0} helpful, ${data.not_helpful || 0} not)`;
+                }
+            }
+            fbYes.addEventListener('click', () => sendFeedback('helpful'));
+            fbNo.addEventListener('click', () => sendFeedback('not_helpful'));
+        });
+    });
+</script>
+{% endblock %}

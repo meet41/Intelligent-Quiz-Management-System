@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Quiz - {% block title %}Welcome{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/default-profile.png' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>
+                <a href="{% url 'home' %}" style="display:flex; align-items:center; gap:.5rem;">
+                    <img src="{% static 'img/logo.png' %}" alt="Intelligent Quiz" style="width:32px; height:32px; border-radius:6px; object-fit:cover;" onerror="this.style.display='none'">
+                    <span>Intelligent Quiz</span>
+                </a>
+            </h1>
+            <nav>
+                <ul>
+                    <li><a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+                    <li><a href="{% url 'quiz_list' %}" class="{% if 'quiz' in request.path %}active{% endif %}">Quizzes</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                {% if user.profile.image %}
+                                    <img src="{{ user.profile.image.url }}" alt="Profile" 
+                                         style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="8" r="4"/>
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    </svg>
+                                {% endif %}
+                                {{ user.username }}
+                            </div>
+                        </a></li>
+                        <li>
+                            <a href="{% url 'logout' %}" class="btn btn-outline" 
+                               onclick="return confirm('Are you sure you want to logout?')">
+                                Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}" class="btn btn-outline">Login</a></li>
+                        <li><a href="{% url 'register' %}" class="btn">Get Started</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}" 
+                         style="animation: slideInDown 0.5s ease-out forwards">
+                        <div class="message-content">
+                            {% if message.tags == 'success' %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                                     stroke="currentColor" stroke-width="2" class="message-icon">
+                                    <path d="M20 6L9 17l-5-5"/>
+                                </svg>
+                            {% elif message.tags == 'error' %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                                     stroke="currentColor" stroke-width="2" class="message-icon">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M15 9l-6 6M9 9l6 6"/>
+                                </svg>
+                            {% else %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                                     stroke="currentColor" stroke-width="2" class="message-icon">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 8v4m0 4h.01"/>
+                                </svg>
+                            {% endif %}
+                            {{ message }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="background: white; padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border);">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; text-align: center; color: var(--text);">
+            <p>&copy; 2024 Intelligent Quiz. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/scripts.js' %}" defer></script>
+</body>
+</html>

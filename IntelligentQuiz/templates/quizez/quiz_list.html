@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="soft-card hoverable" style="text-align:center; margin-bottom:2rem;">
+    <h2 style="font-size:1.75rem; margin:0 0 .5rem; font-weight:600; color:var(--primary);">Explore Quizzes</h2>
+    <p style="max-width:640px; margin:.25rem auto 0; font-size:.85rem; opacity:.7;">Sharpen your mind with fun challenges across categories. Pick a topic and jump in.</p>
+    <button type="button" class="btn-challenge" style="margin-top:1rem;">Daily Challenge: History →</button>
+</div>
+
+<div class="mb-2">
+    <h3 style="margin:0 0 1rem; font-weight:600;">Categories</h3>
+    <div class="soft-grid cols-3">
+        <a href="{% url 'quiz_list' %}" class="category-pill">
+            <div class="icon-wrap">🌐</div>
+            <div class="cat-title">All Categories</div>
+            <div class="cat-desc">View every quiz</div>
+            <span class="difficulty-meter">All</span>
+        </a>
+        {% for category in categories %}
+            <a href="{% url 'subcategory_select' category.slug %}" class="category-pill">
+                <div class="icon-wrap">📘</div>
+                <div class="cat-title">{{ category.name }}</div>
+                <div class="cat-desc">{{ category.description|default:'Browse quizzes' }}</div>
+                <span class="difficulty-meter">Easy</span>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% if attempted_ids %}
+<h3 style="margin-bottom: 1rem;">History - Quiz Attempted</h3>
+{% endif %}
+
+<div class="quiz-grid">
+  {% for quiz in quizzes %}
+    <article class="quiz-card" style="position:relative;">
+      <div style="display:flex;align-items:center;gap:.75rem; margin-bottom:.75rem;">
+        <div style="background: var(--primary); width: 36px; height: 36px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.8rem; font-weight:600;">Q</div>
+        <h3 style="margin:0; font-size:1rem; font-weight:600;">{{ quiz.title }}</h3>
+        <span style="margin-left:auto; font-size:.8rem; padding:.25rem .5rem; border-radius:10px; background:rgba(99,102,241,.12); color:var(--primary);">{{ quiz.question_count|default:10 }} Qs</span>
+      </div>
+      <p style="color: var(--text-light); font-size:.75rem; line-height:1.4; margin:0 0 1rem;">{{ quiz.description|default:'Challenge yourself with this quiz!' }}</p>
+      <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem;">
+        <div class="progress-line" style="width:90px;"><span style="width:60%;"></span></div>
+        <span style="font-size:.8rem; opacity:.6;">Difficulty</span>
+        <span style="margin-left:auto; font-size:.8rem; opacity:.6;">≈ {{ quiz.question_count|default:10 }} min</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:.65rem; opacity:.55;">{{ quiz.question_count|default:10 }} questions</span>
+        <a href="{% url 'quiz_session' quiz.id %}" class="btn" style="font-size:.7rem; padding:.5rem .85rem;">Start Quiz →</a>
+      </div>
+    </article>
+    {% empty %}
+    <div style="grid-column: 1/-1; text-align: center; padding: 3rem; background: var(--bg-card); border-radius: var(--radius);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" style="opacity: 0.5; margin-bottom: 1rem;">
+                <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+            </svg>
+            <h3 style="margin: 0 0 0.5rem; color: var(--text);">No Quizzes Available</h3>
+            <p style="color: var(--text); opacity: 0.8;">Check back later for new quizzes!</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Quiz - {% block title %}Welcome{% endblock %}</title>
+    {% load static %}
+        <script>
+            // Set initial theme ASAP to avoid flash of incorrect theme
+            (function(){
+                try {
+                    const saved = localStorage.getItem('theme');
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    const theme = saved || (prefersDark ? 'dark' : 'light');
+                    if (theme === 'dark') {
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                    }
+                } catch (e) { /* ignore */ }
+            })();
+        </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="soft-theme">
+    <!-- Global loader overlay -->
+    <div id="global-loader" class="global-loader" aria-hidden="true" hidden>
+        <div class="global-loader-content" role="status" aria-live="polite">
+            <div class="loader-brand">
+                <img src="{% static 'img/favicon.png' %}" alt="Logo" style="height: 80px;" class="loader-logo" onerror="this.style.display='none'"/>
+                <span class="loader-title">Intelligent Quiz</span>
+            </div>
+            <div class="loader-spinner" aria-hidden="true"></div>
+            <div class="loader-message">Working on it…</div>
+        </div>
+    </div>
+    <header>
+        <div class="container">
+            <h1 class="site-logo">
+                <a href="{% url 'home' %}" class="site-logo-link">
+                    <img src="{% static 'img/default-profile.png' %}" alt="Intelligent Quiz Logo" class="site-logo-img" onerror="this.style.display='none'">
+                    <span class="site-logo-text">Intelligent Quiz</span>
+                </a>
+            </h1>
+            <nav>
+                <ul>
+                    <li><a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'dashboard_stats' %}" class="{% if 'stats' in request.path %}active{% endif %}">Dashboard</a></li>
+                        <li><a href="{% url 'quiz_history' %}" class="{% if 'history' in request.path %}active{% endif %}">History</a></li>
+                    {% endif %}
+                    <li><a href="{% url 'quiz_list' %}" class="{% if 'quiz' in request.path %}active{% endif %}">Quizzes</a></li>
+                    <li><a href="{% url 'leaderboard' %}" class="{% if 'leaderboard' in request.path %}active{% endif %}">Leaderboard</a></li>
+                    <li>
+                        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" title="Toggle dark mode">
+                            <span class="icon-sun" aria-hidden="true" style="display:none">☀️</span>
+                            <span class="icon-moon" aria-hidden="true">🌙</span>
+                            <span class="label">Theme</span>
+                        </button>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'profile' %}" class="{% if 'profile' in request.path %}active{% endif %}">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                {% if user.profile.image %}
+                                    <img src="{{ user.profile.image.url }}" alt="Profile" 
+                                         style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="8" r="4"/>
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    </svg>
+                                {% endif %}
+                                {{ user.username }}
+                            </div>
+                        </a></li>
+                        <li>
+                            <a href="{% url 'logout' %}" class="btn btn-outline" 
+                               onclick="return confirm('Are you sure you want to logout?')">
+                                Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}" class="btn btn-outline">Login</a></li>
+                        <li><a href="{% url 'register' %}" class="btn">Get Started</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}" 
+                         style="animation: slideInDown 0.5s ease-out forwards">
+                        <div class="message-content">
+                            {% if message.tags == 'success' %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                                     stroke="currentColor" stroke-width="2" class="message-icon">
+                                    <path d="M20 6L9 17l-5-5"/>
+                                </svg>
+                            {% elif message.tags == 'error' %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                                     stroke="currentColor" stroke-width="2" class="message-icon">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M15 9l-6 6M9 9l6 6"/>
+                                </svg>
+                            {% else %}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                                     stroke="currentColor" stroke-width="2" class="message-icon">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 8v4m0 4h.01"/>
+                                </svg>
+                            {% endif %}
+                            {{ message }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Intelligent Quiz</h3>
+                <p>Test your knowledge, challenge yourself, and learn something new every day.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul class="no-bullets">
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'quiz_list' %}">Quizzes</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'profile' %}">Profile</a></li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}">Login</a></li>
+                        <li><a href="{% url 'register' %}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Categories</h4>
+                <ul class="no-bullets">
+                    <li><a href="#">Academic</a></li>
+                    <li><a href="#">Entertainment</a></li>
+                    <li><a href="#">General Knowledge</a></li>
+                    <li><a href="#">Technology</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <ul class="no-bullets">
+                    <li><a href="mailto:support@intelligentquiz.com">support@intelligentquiz.com</a></li>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Intelligent Quiz. All rights reserved. — Developer: 
+                <a href="https://github.com/meet41" target="_blank" rel="noopener noreferrer">Meet Patel</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/scripts.js' %}" defer></script>
+    {% block extra_scripts %}{% endblock %}  
+</body>
+</html>

@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<style>
+/* Leaderboard-specific styles - simple and guaranteed visible */
+.lb-page {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+.lb-header {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8e3c 50%, #ef476f 100%);
+  padding: 3rem 2rem;
+  text-align: center;
+  color: white;
+  margin-bottom: 2rem;
+}
+
+.lb-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+}
+
+.lb-header p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.95);
+}
+
+.lb-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.lb-filters {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.lb-filter-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.lb-filter-btn:hover {
+  border-color: #6366f1;
+  transform: translateY(-2px);
+}
+
+.lb-filter-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
+}
+
+.lb-rank-banner {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  color: white;
+}
+
+.lb-rank-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  min-width: 80px;
+}
+
+.lb-rank-text h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.lb-rank-text p {
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+}
+
+.lb-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+.lb-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.lb-section-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.lb-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lb-player {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s;
+}
+
+.lb-player:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.15);
+  border-color: #6366f1;
+}
+
+.lb-player.current-user {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, white 100%);
+  border-color: #6366f1;
+  border-width: 2px;
+}
+
+.lb-player-rank {
+  min-width: 60px;
+  text-align: center;
+}
+
+.lb-medal {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.lb-rank-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.lb-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border: 2px solid #e2e8f0;
+}
+
+.lb-player-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lb-player-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.lb-you-tag {
+  background: #6366f1;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+
+.lb-top-badge {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+.lb-stats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.lb-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  min-width: 80px;
+}
+
+.lb-stat-icon {
+  font-size: 1.1rem;
+}
+
+.lb-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.lb-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.lb-stat-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.lb-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.lb-empty-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.lb-empty h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  color: #1e293b;
+}
+
+.lb-empty p {
+  margin: 0 0 1.5rem;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .lb-header h1 {
+    font-size: 2rem;
+  }
+  
+  .lb-filters {
+    flex-wrap: wrap;
+  }
+  
+  .lb-player {
+    flex-wrap: wrap;
+  }
+  
+  .lb-stats {
+    width: 100%;
+  }
+}
+</style>
+
+<div class="lb-page">
+  <!-- Header -->
+  <div class="lb-header">
+    <h1>🏆 Global Leaderboard</h1>
+    <p>Top performers across all categories</p>
+  </div>
+
+  <div class="lb-container">
+    <!-- Filter Buttons -->
+    <div class="lb-filters">
+      <a href="?filter=all_time" class="lb-filter-btn {% if filter_type == 'all_time' %}active{% endif %}">All Time</a>
+      <a href="?filter=this_month" class="lb-filter-btn {% if filter_type == 'this_month' %}active{% endif %}">This Month</a>
+      <a href="?filter=this_week" class="lb-filter-btn {% if filter_type == 'this_week' %}active{% endif %}">This Week</a>
+    </div>
+
+    {% if users_data %}
+      <!-- Current User Rank Banner -->
+      {% if current_user_data %}
+      <div class="lb-rank-banner">
+        <div class="lb-rank-number">#{{ current_user_data.rank }}</div>
+        <div class="lb-rank-text">
+          <h3>Great job, {{ user.first_name|default:user.username }}!</h3>
+          <p>
+            {% if current_user_data.medal %}
+              {{ current_user_data.medal }} You're ranked #{{ current_user_data.rank }} out of {{ total_participants }} participant{{ total_participants|pluralize }}
+            {% else %}
+              You're ranked #{{ current_user_data.rank }} out of {{ total_participants }} participant{{ total_participants|pluralize }}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Top Players Section -->
+      <div class="lb-section">
+        <div class="lb-section-header">
+          <span style="font-size: 2rem;">🎯</span>
+          <h2>Top {{ users_data|length }} Players</h2>
+        </div>
+
+        <div class="lb-player-list">
+          {% for user_data in users_data %}
+          <div class="lb-player {% if user_data.user.id == request.user.id %}current-user{% endif %}">
+            <!-- Rank/Medal -->
+            <div class="lb-player-rank">
+              {% if user_data.medal %}
+                <span class="lb-medal">{{ user_data.medal }}</span>
+              {% else %}
+                <span class="lb-rank-num">#{{ user_data.rank }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Avatar -->
+            <div class="lb-avatar">{{ user_data.user.username|first|upper }}</div>
+
+            <!-- Player Info -->
+            <div class="lb-player-info">
+              <div class="lb-player-name">
+                {{ user_data.user.get_full_name|default:user_data.user.username }}
+                {% if user_data.user.id == request.user.id %}
+                  <span class="lb-you-tag">You</span>
+                {% endif %}
+              </div>
+              {% if user_data.rank <= 3 %}
+                <span class="lb-top-badge">Top Performer</span>
+              {% endif %}
+            </div>
+
+            <!-- Stats -->
+            <div class="lb-stats">
+              <div class="lb-stat">
+                <span class="lb-stat-icon">👍</span>
+                <div class="lb-stat-content">
+                  <div class="lb-stat-value">{{ user_data.avg_score|floatformat:1 }}</div>
+                  <div class="lb-stat-label">Avg Score</div>
+                </div>
+              </div>
+              <div class="lb-stat">
+                <span class="lb-stat-icon">🎯</span>
+                <div class="lb-stat-content">
+                  <div class="lb-stat-value">{{ user_data.total_quizzes }}</div>
+                  <div class="lb-stat-label">Quizzes</div>
+                </div>
+              </div>
+              <div class="lb-stat">
+                <span class="lb-stat-icon">⭐</span>
+                <div class="lb-stat-content">
+                  <div class="lb-stat-value">{{ user_data.total_score }}</div>
+                  <div class="lb-stat-label">Points</div>
+                </div>
+              </div>
+              <div class="lb-stat">
+                <span class="lb-stat-icon">🎓</span>
+                <div class="lb-stat-content">
+                  <div class="lb-stat-value">{{ user_data.accuracy|floatformat:0 }}%</div>
+                  <div class="lb-stat-label">Accuracy</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <!-- Empty State -->
+      <div class="lb-section">
+        <div class="lb-empty">
+          <div class="lb-empty-icon">🏆</div>
+          <h3>No data yet</h3>
+          <p>Be the first to complete a quiz and appear on the leaderboard!</p>
+          <a href="{% url 'quiz_list' %}" class="btn">Start a Quiz</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

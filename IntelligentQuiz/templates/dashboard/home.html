@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="soft-container mt-1">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header fade-in">
+    <div class="info">
+      {% if user.is_authenticated and user.profile.image %}
+        <img src="{{ user.profile.image.url }}" alt="Avatar" class="avatar-large" onerror="this.style.display='none'" />
+      {% else %}
+        <div class="avatar-large">{{ user.username|first|default:'U'|upper }}</div>
+      {% endif %}
+      <div class="welcome">
+        <h2>Welcome back, {{ user.first_name|default:user.username }}!</h2>
+        <div class="subtitle">Level 7 • XP: 1,850 / 2,500</div>
+        <div class="xp-wrapper" aria-hidden="true">
+          <div class="xp-bar"><span style="width:58%;"></span></div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-challenge" type="button">Daily Challenge: History →</button>
+  </div>
+
+  <!-- Category Pills -->
+  {% if categories %}
+  <div class="mt-3">
+    <h3 class="mb-2" style="margin:0; font-weight:600;">Categories</h3>
+    <div class="soft-grid cols-3">
+      {% for c in categories %}
+        <a href="{% url 'quiz_list' %}#{{ c.slug }}" class="category-pill">
+          <div class="icon-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
+            </svg>
+          </div>
+          <div class="cat-title">{{ c.name }}</div>
+          <div class="cat-desc">Explore {{ c.name }} quizzes</div>
+          <span class="difficulty-meter">Easy</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Achievements & Spotlight / Activity -->
+  <div class="mt-3 soft-grid" style="grid-template-columns: repeat(4, 1fr); gap:1rem; align-items: start;">
+    <!-- Achievements -->
+    <div class="soft-card tight">
+      <h4 style="margin:0 0 .5rem; font-weight:600;">Your Achievements</h4>
+      <div class="soft-grid cols-4" style="grid-template-columns:repeat(2,1fr);">
+        <div class="badge-achievement hoverable">
+          <div class="badge-icon gold">🏅</div>
+          <div class="badge-title">First Quiz</div>
+          <div class="badge-desc">Complete one quiz</div>
+        </div>
+        <div class="badge-achievement hoverable">
+          <div class="badge-icon blue">📘</div>
+          <div class="badge-title">10 Quizzes</div>
+          <div class="badge-desc">Reach ten attempts</div>
+        </div>
+        <div class="badge-achievement hoverable">
+          <div class="badge-icon green">⭐</div>
+          <div class="badge-title">Perfect Score</div>
+          <div class="badge-desc">Get 100% once</div>
+        </div>
+        <div class="badge-achievement locked">
+          <div class="badge-icon blue">🎯</div>
+          <div class="badge-title">Category Master</div>
+          <div class="badge-desc">80% in 3 categories</div>
+        </div>
+      </div>
+    </div>
+    <!-- Skill Spotlight -->
+    <div class="soft-card tight">
+      <h4 style="margin:0 0 .5rem; font-weight:600;">Skill Spotlight</h4>
+      <canvas id="radarChart" height="140" style="width:100%; display:block; margin:0;"></canvas>
+    </div>
+    <!-- Category Breakdown -->
+    <div class="soft-card tight category-breakdown-card">
+      <h4 style="margin:0 0 .65rem; font-weight:600; display:flex; align-items:center; gap:.4rem;">📊 Performance by Category</h4>
+      <div class="category-performance-grid">
+      {% for stat in category_stats %}
+        <div class="category-perf-card" data-percent="{{ stat.percent }}">
+          <div class="cat-perf-icon" style="background:{{ stat.gradient }};">{{ stat.emoji }}</div>
+          <div class="cat-perf-info">
+            <div class="cat-perf-name">{{ stat.name }}</div>
+            <div class="cat-perf-stats">
+              <span class="cat-perf-percent">{{ stat.avg_score }}/{{ stat.avg_total }}</span>
+              <span class="cat-perf-divider">•</span>
+              <span class="cat-perf-attempts">{{ stat.count }} quiz{{ stat.count|pluralize:"zes" }}</span>
+            </div>
+          </div>
+          <div class="cat-perf-progress">
+            <div class="cat-perf-bar" data-width="{% widthratio stat.avg_score stat.avg_total 100 %}"></div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="font-size:.75rem; opacity:.6; margin:0;">No performance data yet. Start taking quizzes!</p>
+      {% endfor %}
+      </div>
+    </div>
+    <!-- Recent Activity -->
+    <div class="soft-card">
+      <h4 style="margin:0 0 .75rem; font-weight:600;">Recent Activity</h4>
+      <div class="activity-soft">
+        <div class="top-row"><span style="color:#059669">✔</span> History - Easy (AI)</div>
+        <div class="meta"><span>4 / 5</span><span>Today</span></div>
+        <div class="score-chip low">40%</div>
+        <button class="practice-btn" type="button">Practice Now</button>
+      </div>
+      <div class="activity-soft">
+        <div class="top-row"><span style="color:#b45309">⏳</span> Science & Tech - Hard (AI)</div>
+        <div class="meta"><span>2 / 8</span><span>Ongoing</span></div>
+        <div class="progress-line"><span style="width:25%;"></span></div>
+        <div class="score-chip medium">40%</div>
+        <button class="practice-btn" type="button">Practice Now</button>
+      </div>
+      <div class="activity-soft">
+        <div class="top-row"><span style="color:#6366f1">🔒</span> Physics Fundamentals - Easy (AI)</div>
+        <div class="meta"><span>Locked</span><span>Goal: 60%</span></div>
+        <div class="score-chip low">–</div>
+        <button class="practice-btn" type="button">Practice Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured Quizzes (existing data) -->
+  <div class="mt-3">
+    <div class="flex justify-between items-center mb-2">
+      <h3 style="margin:0;font-weight:600;">Featured Quizzes</h3>
+      <a href="{% url 'quiz_list' %}" style="color: var(--primary); text-decoration:none; font-weight:500;">See all</a>
+    </div>
+    <div class="quiz-grid">
+      {% for quiz in quizzes %}
+        <article class="quiz-card">
+          <div style="display:flex; align-items:center; gap: .75rem; margin-bottom: .75rem;">
+            <div style="background: var(--primary); width: 36px; height: 36px; border-radius: 12px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.9rem; font-weight:600;">Q</div>
+            <h4 style="margin:0; font-size:1rem; font-weight:600;">{{ quiz.title }}</h4>
+            <span style="margin-left:auto; font-size:.65rem; padding:.25rem .5rem; border-radius:10px; background:rgba(99,102,241,.12); color:var(--primary);">{{ quiz.question_count|default:10 }} Qs</span>
+          </div>
+          <p style="color: var(--text-light); font-size:.8rem; line-height:1.4;">{{ quiz.description|default:'No description' }}</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top: .75rem;">
+            <span style="font-size:.65rem; opacity:.6;">Difficulty: Easy</span>
+            <a href="{% url 'take_quiz' quiz.id %}" class="btn" style="font-size:.75rem; padding:.55rem .9rem;">Take Quiz →</a>
+          </div>
+        </article>
+      {% empty %}
+        <p>No quizzes published yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  if (!window.Chart) return;
+  const radarEl = document.getElementById('radarChart');
+  if (radarEl) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.10)';
+    const labelColor = isDark ? '#cbd5e1' : '#334155';
+    const dark = isDark;
+    const bgCol = dark ? 'rgba(139,147,255,.30)' : 'rgba(99,102,241,.28)';
+    const strokeCol = dark ? '#8b93ff' : '#6366f1';
+    const pointCol = dark ? '#c7d2fe' : '#6366f1';
+    new Chart(radarEl, {
+      type: 'radar',
+      data: {
+        labels: ['History','Science','Technology','Math','General'],
+        datasets: [{
+          label: 'Strengths',
+          data: [72, 56, 64, 48, 60],
+          backgroundColor: bgCol,
+          borderColor: strokeCol,
+          pointBackgroundColor: pointCol,
+          pointBorderColor: strokeCol,
+          borderWidth: 2
+        }]
+      },
+      options: { scales: { r: { angleLines: { color: gridColor }, grid: { color: gridColor }, pointLabels: { color: labelColor, font:{ size:12, weight:600 } }, ticks:{ display:false } } }, plugins:{ legend:{ display:false } } }
+    });
+  }
+  
+  // Animate category progress bars (new design)
+  setTimeout(() => {
+    document.querySelectorAll('.cat-perf-bar[data-width]').forEach(bar => {
+      const percent = parseInt(bar.getAttribute('data-width')) || 0;
+      bar.style.width = percent + '%';
+    });
+  }, 150);
+  
+  // Animate category progress bars (legacy)
+  setTimeout(() => {
+    document.querySelectorAll('.category-progress-bar[data-percent]').forEach(bar => {
+      const percent = parseInt(bar.getAttribute('data-percent')) || 0;
+      bar.style.width = percent + '%';
+    });
+  }, 100);
+  
+  // Fill dynamic category progress bars (simple)
+  document.querySelectorAll('.category-stat-item .cat-progress-bar[data-percent]').forEach(el => {
+    const p = parseInt(el.getAttribute('data-percent')) || 0;
+    setTimeout(() => { el.style.width = p + '%'; }, 100);
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

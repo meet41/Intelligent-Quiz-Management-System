@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Quiz History{% endblock %}
+{% block content %}
+<section class="history-page" style="max-width:1100px;margin:1.5rem auto;padding:0 1rem;">
+  <div class="history-header" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+    <h2 style="margin:0;">Your Quiz History</h2>
+    <form method="get" class="form-row history-filters" style="gap:.5rem;flex-wrap:wrap;">
+      <input type="text" name="q" value="{{ filters.q }}" placeholder="Search quizzes..." style="min-width:220px;">
+      <select name="category">
+        <option value="">All categories</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {% if filters.category|default:''|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="status">
+        <option value="">All</option>
+        <option value="ongoing" {% if filters.status == 'ongoing' %}selected{% endif %}>Ongoing</option>
+        <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Completed</option>
+      </select>
+      <select name="sort">
+        <option value="-date" {% if filters.sort == '-date' %}selected{% endif %}>Newest</option>
+        <option value="date" {% if filters.sort == 'date' %}selected{% endif %}>Oldest</option>
+        <option value="-score" {% if filters.sort == '-score' %}selected{% endif %}>High score</option>
+        <option value="score" {% if filters.sort == 'score' %}selected{% endif %}>Low score</option>
+        <option value="-time" {% if filters.sort == '-time' %}selected{% endif %}>Longest</option>
+        <option value="time" {% if filters.sort == 'time' %}selected{% endif %}>Shortest</option>
+      </select>
+      <button class="btn" type="submit">Apply</button>
+    </form>
+  </div>
+
+  <!-- Ongoing section -->
+  <div class="profile-card ongoing-block" style="margin:.75rem 0 1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+      <h3 style="margin-top:0">Ongoing quizzes</h3>
+      <div id="ongoing-count" style="font-size:.85rem;color:var(--text-light);"></div>
+    </div>
+    {% if ongoing %}
+      <ul class="ongoing-list" style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.75rem;">
+        {% for a in ongoing %}
+          <li class="ongoing-item" data-progress="{{ a.current_index }}" data-total="{{ a.total }}" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.75rem 1rem;border:1px solid var(--border);border-radius:.75rem;background:var(--bg-card);position:relative;overflow:hidden;">
+            <div class="progress-bar" style="position:absolute;inset:0;z-index:0;background:linear-gradient(90deg,var(--primary) calc(({{ a.current_index }} / {{ a.total|default:1 }})*100%),transparent 0);opacity:.12;pointer-events:none;"></div>
+            <div>
+              <div style="font-weight:600;">{{ a.quiz.title }}</div>
+              <div style="color:var(--text-light)">
+                {{ a.quiz.category.name|default:'Uncategorized' }} • Started {{ a.started_at|date:"M d, Y H:i" }} • {{ a.current_index }}/{{ a.total }} answered
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem;">
+              <div class="mini-radial" data-ratio="{{ a.current_index }}/{{ a.total }}" style="width:36px;height:36px;border-radius:50%;background:conic-gradient(var(--primary) calc(({{ a.current_index }} / {{ a.total|default:1 }})*360deg),var(--bg) 0);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--text);font-weight:600;">{{ a.current_index }}/{{ a.total }}</div>
+              <a class="btn btn-outline" href="{% url 'quiz_session' a.quiz.id %}">Resume</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div style="color:var(--text-light)">No ongoing quizzes.</div>
+    {% endif %}
+  </div>
+
+  <!-- Completed table -->
+  <div class="profile-card completed-block">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+      <h3 style="margin-top:0">Completed quizzes</h3>
+      <div id="completed-count" style="font-size:.85rem;color:var(--text-light);"></div>
+    </div>
+    {% if completed %}
+      <div style="overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">Quiz</th>
+              <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">Category</th>
+              <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">Date</th>
+              <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">Score</th>
+              <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">Time</th>
+              <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)"></th>
+            </tr>
+          </thead>
+          <tbody id="completed-tbody">
+            {% for row in attempts_all %}
+              {% if row.obj.is_completed %}
+              <tr class="completed-row" data-score="{{ row.percent }}" data-time="{{ row.time_secs }}" data-date="{{ row.date|date:'U' }}">
+                <td style="padding:.6rem .5rem;">
+                  <div style="display:flex;flex-direction:column;">
+                    <span style="font-weight:600;">{{ row.title }}</span>
+                    <span style="font-size:.7rem;color:var(--text-light);">{{ row.total }} questions</span>
+                  </div>
+                </td>
+                <td style="padding:.6rem .5rem;">{{ row.category }}</td>
+                <td style="padding:.6rem .5rem;">{{ row.date|date:"M d, Y H:i" }}</td>
+                <td style="padding:.6rem .5rem; font-weight:600;">
+                  <span class="score-pill" style="display:inline-block;padding:.35rem .6rem;border-radius:1rem;background:rgba(99,102,241,.12);color:var(--primary);min-width:52px;text-align:center;">{{ row.percent }}%</span>
+                </td>
+                <td style="padding:.6rem .5rem;">{{ row.time }}</td>
+                <td style="padding:.6rem .5rem;"><a class="btn btn-outline" href="{% url 'quiz_result' row.obj.id %}">View</a></td>
+              </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="color:var(--text-light)">No completed quizzes yet.</div>
+    {% endif %}
+  </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const ongoingItems = document.querySelectorAll('.ongoing-item');
+    const ongoingCountEl = document.getElementById('ongoing-count');
+    const completedRows = Array.from(document.querySelectorAll('.completed-row'));
+    const completedCountEl = document.getElementById('completed-count');
+    const tbody = document.getElementById('completed-tbody');
+    if (ongoingCountEl) ongoingCountEl.textContent = ongoingItems.length + ' ongoing';
+    if (completedCountEl) completedCountEl.textContent = completedRows.length + ' completed';
+    completedRows.forEach((r,i)=>{ r.style.opacity=0; r.style.transform='translateY(6px)'; setTimeout(()=>{ r.style.transition='opacity .4s ease, transform .4s ease'; r.style.opacity=1; r.style.transform='translateY(0)'; }, 40*i); });
+    // Client-side sorting buttons
+    const headers = [ ['date','Date'], ['score','Score'], ['time','Time'] ];
+    headers.forEach(h=>{ /* placeholder for potential dynamic enhancements */ });
+    let sortDir = 1; // toggled
+    function sortBy(key){
+      sortDir *= -1;
+      const rows = Array.from(document.querySelectorAll('.completed-row'));
+      rows.sort((a,b)=> (parseInt(a.dataset[key]) - parseInt(b.dataset[key])) * sortDir);
+      rows.forEach(r=>tbody.appendChild(r));
+    }
+    document.querySelectorAll('.score-pill');
+    // Add inline sort buttons (already in markup as potential enhancement later)
+    document.querySelectorAll('button.sort-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=> sortBy(btn.dataset.key));
+    });
+  });
+  </script>
+</section>
+{% endblock %}

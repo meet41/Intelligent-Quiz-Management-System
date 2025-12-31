@@ -1,4 +1,4 @@
-# IntelligentQuiz Project By: Meet Patel
+# IntelligentQuiz (Django)
 
 A simple multi-app Django project for creating and taking quizzes. Includes:
 - Quizzes with categories, questions, and choices
@@ -102,6 +102,60 @@ pip install --only-binary=:all: pillow
 - `media/` – uploaded images (dev)
 
 Enjoy building! 🎯
+
+## AI Question Generation (Task 2.3)
+
+This project includes AI-powered multiple-choice question generation via OpenAI (ChatGPT) or Anthropic (Claude). The flow caches raw AI output as drafts so you can review and import them into real quizzes from the Django Admin.
+
+### 1) Configure environment
+
+Edit `.env` in `IntelligentQuiz/` and set at least one provider key:
+
+```properties
+# AI Integration
+OPENAI_API_KEY='your-openai-key'
+# or
+ANTHROPIC_API_KEY='your-anthropic-key'
+
+# Optional overrides (these defaults are used if not set)
+# AI_PROVIDER='openai'           # 'openai' or 'anthropic'
+# OPENAI_MODEL='gpt-3.5-turbo'
+# ANTHROPIC_MODEL='claude-2.1'
+```
+
+Restart the server after editing `.env`.
+
+### 2) Generate a draft
+
+From the site UI:
+- Go to a Category, select a Subcategory, choose Difficulty and Question count.
+- Click Start. The app will call the AI provider and save an `AIQuestionDraft` containing:
+	- The exact prompt
+	- The raw provider response
+	- A normalized JSON payload under `parsed.items`
+
+If the provider returns non-JSON or an error occurs, we still save a draft with `error` text to help you diagnose.
+
+### 3) Review and import in Admin
+
+- Go to `/admin/` → AI Question Drafts.
+- Open your draft. Set a `Target quiz` to import into (create a quiz first if needed).
+- Back in the Drafts list, select the draft and run the action: “Approve and import into target quiz”.
+- The system will create `Question` and `Choice` records under the chosen quiz. Draft is marked approved.
+
+### 4) Take the quiz
+
+- Visit the quiz page and click “Take” to answer the imported questions.
+- Submit to see your score and review answers. The result page now uses `{% widthratio %}` to compute percentages.
+
+### Notes and limitations
+
+- Provider selection: If `AI_PROVIDER` isn’t set, the app uses `openai` when `OPENAI_API_KEY` exists; otherwise `anthropic`.
+- The service asks for strictly JSON output; if the model returns extra text or code fences, we attempt to extract the JSON blob.
+- Normalization accepts alternate field names like `options` and maps letters like `"B"` to `correct_index`.
+- Import skips malformed items (missing text/choices/correct_index).
+- Everything is cached in `AIQuestionDraft` for transparency and troubleshooting.
+
 # IntelligentQuiz — Setup and Run (Windows PowerShell)
 
 This guide gets you from zero to a working Django quiz app with users, quizzes, questions, and results.

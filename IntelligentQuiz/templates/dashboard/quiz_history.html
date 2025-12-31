@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Quiz History{% endblock %}
+{% block content %}
+<section class="soft-container mt-2 history-enhanced">
+  <!-- Search + Filters card -->
+  <form method="get" class="soft-card filter-bar" id="historyFilterForm">
+    <div class="filter-row">
+      <div class="filter-field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="filter-icon"><circle cx="11" cy="11" r="8"/><path d="M21 21l-3.4-3.4"/></svg>
+        <input class="filter-input" type="text" name="q" value="{{ filters.q }}" placeholder="Search quizzes" autocomplete="off" style="border: 1px solid;margin-bottom: 1.6em;">
+      </div>
+      <div class="filter-selects">
+        <div class="filter-select">
+          <select name="category" aria-label="Category" style="border: .8px solid;">
+            <option value="">All categories</option>
+            {% for c in categories %}
+              <option value="{{ c.id }}" {% if filters.category|default:''|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-select">
+          <select name="status" aria-label="Status" style="border: .8px solid;">
+            <option value="">All Types</option>
+            <option value="ongoing" {% if filters.status == 'ongoing' %}selected{% endif %}>Ongoing</option>
+            <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Completed</option>
+          </select>
+        </div>
+        <div class="filter-select">
+          <select name="sort" aria-label="Sort" style="border: .8px solid;">
+            <option value="-date" {% if filters.sort == '-date' %}selected{% endif %}>Newest</option>
+            <option value="date" {% if filters.sort == 'date' %}selected{% endif %}>Oldest</option>
+            <option value="-score" {% if filters.sort == '-score' %}selected{% endif %}>High score</option>
+            <option value="score" {% if filters.sort == 'score' %}selected{% endif %}>Low score</option>
+            <option value="-time" {% if filters.sort == '-time' %}selected{% endif %}>Longest</option>
+            <option value="time" {% if filters.sort == 'time' %}selected{% endif %}>Shortest</option>
+          </select>
+        </div>
+        <button class="btn apply-btn" type="submit">Apply Filters</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Ongoing -->
+  <div class="mt-2">
+    <div class="flex justify-between items-center mb-1">
+      <h3 style="margin:0;font-weight:600;">Your Ongoing Quizzes</h3>
+      <div id="ongoing-count" style="font-size:.85rem;color:var(--text-light);"></div>
+    </div>
+    {% if ongoing %}
+    <div class="history-grid-3">
+      {% for item in ongoing_items %}
+        {% with a=item.obj %}
+        <article class="soft-card hoverable" style="position:relative;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;">
+            <div>
+              <div style="font-weight:600;">{{ a.quiz.title }}</div>
+              <div style="font-size:.75rem;opacity:.7;">{{ a.quiz.category.name|default:'Uncategorized' }}</div>
+            </div>
+            <span class="status-pill status-medium" style="font-weight: bold;font-size: .75rem;">{{ item.peers_ongoing }} ongoing</span>
+          </div>
+          <div class="progress-line mt-2"><span style="width: calc({{ a.current_index }} / {{ a.total|default:1 }} * 100%);"></span></div>
+          <div class="flex items-center justify-between mt-1">
+            <div style="font-size:.75rem;opacity:.7;">{{ a.current_index }}/{{ a.total }} answered</div>
+            <a href="{% url 'quiz_session' a.quiz.id %}" class="btn" style="font-size:.75rem;padding:.45rem .8rem;">Continue</a>
+          </div>
+        </article>
+        {% endwith %}
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="soft-card">No ongoing quizzes.</div>
+    {% endif %}
+  </div>
+
+  <!-- Completed -->
+  <div class="mt-3">
+    <div class="flex justify-between items-center mb-1">
+      <h3 style="margin:0;font-weight:600;">Completed Quizzes</h3>
+      <div id="completed-count" style="font-size:.85rem;color:var(--text-light);"></div>
+    </div>
+    {% if completed %}
+    <div class="history-grid-3" id="completed-grid">
+      {% for row in attempts_all %}
+        {% if row.obj.is_completed %}
+        <article class="soft-card hoverable completed-card" data-score="{{ row.percent }}" data-time="{{ row.time_secs }}" data-date="{{ row.date|date:'U' }}">
+          <div style="display:flex;align-items:center;gap:.75rem; margin-bottom:.5rem;">
+            <div style="background: var(--primary); width: 34px; height: 34px; border-radius: 10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.85rem; font-weight:600;">Q</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;">{{ row.title }}</div>
+              <div style="font-size:.75rem;opacity:.7;">{{ row.category }} • {{ row.total }} questions</div>
+            </div>
+            {% if row.percent >= 80 %}
+              <span class="score-chip good small">{{ row.percent }}%</span>
+            {% elif row.percent >= 50 %}
+              <span class="score-chip medium small">{{ row.percent }}%</span>
+            {% else %}
+              <span class="score-chip low small">{{ row.percent }}%</span>
+            {% endif %}
+          </div>
+          <div class="flex items-center justify-between">
+            <div style="font-size:.75rem;opacity:.7;font-weight: bold;">{{ row.date|date:"M d, Y H:i" }} • {{ row.time }}</div>
+            <div class="flex items-center" style="gap:.5rem;">
+              <a href="{% url 'quiz_result' row.obj.id %}" class="btn btn-outline" style="font-size:.75rem;padding:.4rem .75rem;font-weight: bold;">Review</a>
+              <a href="{% url 'quiz_session' row.obj.quiz.id %}" class="btn" style="font-size:.75rem;padding:.4rem .75rem;font-weight: bold;">Retry</a>
+            </div>
+          </div>
+        </article>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="soft-card">No completed quizzes yet.</div>
+    {% endif %}
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const ongoingCountEl = document.getElementById('ongoing-count');
+    const completedCountEl = document.getElementById('completed-count');
+    const ongoingCards = document.querySelectorAll('.soft-card.hoverable a[href*="quiz_session"]');
+    const completedCards = document.querySelectorAll('.completed-card');
+    if (ongoingCountEl) ongoingCountEl.textContent = (ongoingCards ? ongoingCards.length : 0) + ' ongoing';
+    if (completedCountEl) completedCountEl.textContent = (completedCards ? completedCards.length : 0) + ' completed';
+    // Auto submit selects after short debounce
+    const form = document.getElementById('historyFilterForm');
+    let t;
+    form.querySelectorAll('select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        clearTimeout(t);
+        t = setTimeout(()=> form.submit(), 120);
+      });
+    });
+    // Submit on Enter in search
+    const searchInput = form.querySelector('.filter-input');
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') form.submit(); });
+  });
+  </script>
+</section>
+{% endblock %}

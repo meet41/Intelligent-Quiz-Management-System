@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+  <a href="{% url 'quiz_list' %}" class="btn" style="background: var(--bg-card); color: var(--text);">← Back</a>
+    <h2 style="margin:0; color:var(--primary);">{% if has_subcategories %}Choose a subcategory{% else %}Generate quiz for {{ category.name }}{% endif %}</h2>
+  </div>
+  <p style="opacity:.8; margin-bottom:1rem;">Category: <strong>{{ category.name }}</strong>{% if not has_subcategories %} • This category has no subcategories. You can generate a quiz directly.{% endif %}</p>
+
+  <!-- Search/filter -->
+  {% if has_subcategories %}
+  <form method="get" style="margin-bottom: 1rem; display:flex; gap:.5rem;">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search subcategories..." style="flex:1; padding:.6rem .8rem; border:1px solid var(--border); border-radius:8px;" />
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+  {% endif %}
+
+  <form method="post" action="{% url 'start_quiz' category.slug %}" id="start-form" data-global-loader="Generating AI quiz…">
+    {% csrf_token %}
+    {% if has_subcategories %}
+    <div class="category-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
+      {% for s in subcategories %}
+  <label class="category-card" style="text-decoration:none; padding:1rem; border-radius:10px; background:var(--bg-card); display:flex; align-items:flex-start; gap:1rem; cursor:pointer; border:1px solid var(--border);">
+        <input type="radio" name="subcategory" value="{{ s.id }}" style="margin-top:.4rem;" />
+        <div>
+          <div style="display:flex; align-items:center; gap:.5rem;">
+            <i class="{{ s.icon|default:'fas fa-tag' }}" style="color:var(--primary);"></i>
+            <h4 style="margin:0;">{{ s.name }}</h4>
+          </div>
+          {% if s.description %}
+          <p style="margin:.25rem 0 0; opacity:.8; font-size:.95rem;">{{ s.description }}</p>
+          {% endif %}
+          <p style="margin:.25rem 0 0; opacity:.7; font-size:.9rem;">
+            {{ s.get_quiz_count }} quiz{{ s.get_quiz_count|pluralize }} available
+          </p>
+        </div>
+      </label>
+      {% empty %}
+      <div style="opacity:.8;">No subcategories found.</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Options -->
+    <div class="options" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+  <div style="background:var(--bg-card); padding:1rem; border-radius:10px; border:1px solid var(--border);">
+        <h4 style="margin-top:0;">Difficulty</h4>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+          {% for value,label in difficulties %}
+          <label style="display:flex; align-items:center; gap:.4rem;">
+            <input type="radio" name="difficulty" value="{{ value }}" {% if forloop.first %}checked{% endif %} /> {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+  <div style="background:var(--bg-card); padding:1rem; border-radius:10px; border:1px solid var(--border);">
+        <h4 style="margin-top:0;">Number of questions</h4>
+        <select name="num_questions" style="padding:.6rem .8rem; border:1px solid var(--border); border-radius:8px;">
+          {% for n in question_options %}
+          <option value="{{ n }}">{{ n }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="start-btn" {% if not has_subcategories %}data-nosubcat="1"{% else %}disabled{% endif %}>Start Quiz</button>
+  </form>
+</div>
+
+<script>
+  // Enable Start button only when a subcategory is chosen
+  document.addEventListener('DOMContentLoaded', () => {
+    const radios = document.querySelectorAll('input[name="subcategory"]');
+    const startBtn = document.getElementById('start-btn');
+    if (!startBtn?.dataset?.nosubcat) {
+      radios.forEach(r => r.addEventListener('change', () => {
+        startBtn.disabled = !document.querySelector('input[name="subcategory"]:checked');
+      }));
+    }
+  });
+</script>
+{% endblock %}

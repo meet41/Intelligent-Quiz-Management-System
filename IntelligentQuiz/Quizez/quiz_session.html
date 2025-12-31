@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  .layout { display:grid; grid-template-columns: 1fr 280px; gap: 20px; max-width: 1100px; margin: 0 auto; }
+  .quiz-container { max-width: 860px; margin: 0 auto; }
+  .quiz-card { background: var(--bg-card); border: 1px solid var(--border, #e6e6e6); border-radius: 12px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+  .question-text { font-size: 1.15rem; line-height: 1.5; color: var(--text, #222); margin-bottom: 1rem; }
+  .counter { color: var(--text-light, #6b7280); font-weight: 500; }
+  .options { display: grid; gap: 12px; margin-top: 1rem; }
+  .option-card { display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--border, #e6e6e6); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: .15s ease; }
+  .option-card:hover { border-color: var(--primary, #5b7cfa); background: rgba(91,124,250,0.04); }
+  .option-card.selected { border-color: var(--primary, #5b7cfa); background: rgba(91,124,250,0.08); box-shadow: 0 2px 10px rgba(91,124,250,.12); }
+  .option-radio { margin-top: 4px; }
+  .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border, #e6e6e6); background: var(--bg-card); color: var(--text); cursor: pointer; }
+  .btn-primary { background: var(--primary, #5b7cfa); color: var(--primary-contrast, #fff); border-color: var(--primary, #5b7cfa); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .bar { height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+  .progress { height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 16px 0 24px; }
+  .progress > span { display: block; height: 100%; background: var(--primary, #5b7cfa); width: {{ progress_percent }}%; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap: 12px; padding: 10px 0; position: sticky; top: 0; background: var(--bg-card); z-index: 5; }
+  .timer { display:flex; align-items:center; gap: 8px; font-weight:700; color: var(--text,#111827); }
+  .pill { padding: 6px 10px; border-radius: 999px; border:1px solid var(--border,#e5e7eb); background: var(--bg-card); color: var(--text); }
+  .review { position: sticky; top: 10px; }
+  .review .card { background: var(--bg-card); border:1px solid var(--border,#e6e6e6); border-radius:12px; padding:14px; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+  .grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; }
+  .qdot { display:flex; align-items:center; justify-content:center; height:36px; border-radius:8px; border:1px solid var(--border); background: var(--bg); color: var(--text); text-decoration:none; font-weight:600; }
+  .qdot.answered { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: var(--success); }
+  .qdot.current { outline:2px solid var(--primary,#5b7cfa); }
+  .review-legend { display:flex; gap:8px; align-items:center; font-size:.85rem; color: var(--text-light); margin-top:10px; }
+  .box { width:14px; height:14px; border-radius:3px; border:1px solid var(--border); background: var(--bg); }
+  .box.ans { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); }
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.35); z-index: 50; }
+  .modal.open { display:flex; }
+  .modal .panel { background: var(--bg-card); color: var(--text); border-radius:12px; padding:20px; width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  @media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+    .quiz-card { padding: 16px; }
+  }
+</style>
+
+<div class="layout" id="quizLayout" data-deadline="{{ deadline_epoch }}" data-attempt="{{ attempt.id }}">
+  <div>
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="counter">Question {{ counter }} of {{ total }}</div>
+        <div class="pill" title="Completion">
+          <span id="answeredCount">{{ answered_count }}</span> / {{ total }}
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="timer">
+          ⏳ <span id="timer">--:--</span>
+        </div>
+        <button type="button" id="openSubmit" class="btn btn-primary">Submit Quiz</button>
+      </div>
+    </div>
+
+    <div class="progress"><span id="progressBar" style="width: {{ progress_percent }}%"></span></div>
+
+  <form method="post" class="quiz-card">
+    {% csrf_token %}
+    <input type="hidden" name="nav" id="navField" value="">
+    <div class="question-text">{{ question.text }}</div>
+
+    {% if question.image %}
+      <div style="margin: 12px 0; text-align:center;">
+        <img src="{{ question.image.url }}" alt="Question image" style="max-width:100%; border-radius: 10px;" />
+      </div>
+    {% endif %}
+
+    <div class="options">
+      {% for c in question.choices.all %}
+        <label class="option-card {% if selected_id == c.id %}selected{% endif %}">
+          <input class="option-radio" type="radio" name="choice" value="{{ c.id }}" {% if selected_id == c.id %}checked{% endif %}>
+          <div>{{ c.text }}</div>
+        </label>
+      {% endfor %}
+    </div>
+
+    <div class="nav-bar">
+      <button type="submit" name="nav" value="prev" class="btn" {% if not has_prev %}disabled{% endif %}>
+        ← Previous
+      </button>
+      <div style="display:flex; gap:8px; align-items:center; color:#6b7280;">
+        {{ counter }} / {{ total }}
+      </div>
+      {% if has_next %}
+        <div style="display:flex; gap:8px;">
+          <button type="submit" name="nav" value="skip" class="btn" title="Skip without answering">Skip →</button>
+          <button type="submit" name="nav" value="next" class="btn btn-primary">Next →</button>
+        </div>
+      {% else %}
+        <div style="display:flex; gap:8px;">
+          <button type="button" id="openSubmitBottom" class="btn btn-primary">Submit</button>
+        </div>
+      {% endif %}
+    </div>
+  </form>
+
+  </div>
+
+  <aside class="review">
+    <div class="card">
+      <div style="font-weight:600; margin-bottom:8px;">Review</div>
+      <div class="grid">
+        {% for r in review_map %}
+          <a class="qdot {% if r.answered %}answered{% endif %} {% if r.is_current %}current{% endif %}" href="?q={{ r.n|add:'-1' }}" title="Go to question {{ r.n }}">{{ r.n }}</a>
+        {% endfor %}
+      </div>
+      <div class="review-legend">
+        <span class="box ans"></span> Answered
+        <span class="box" style="margin-left:8px;"></span> Unanswered
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Submit confirmation modal -->
+<div class="modal" id="submitModal" aria-hidden="true">
+  <div class="panel">
+    <div style="font-weight:700; font-size:1.1rem; margin-bottom:8px;">Submit Quiz?</div>
+    <div id="submitSummary" style="color:var(--text-light); margin-bottom:10px;">
+      You have <strong id="answeredCountModal">{{ answered_count }}</strong> of {{ total }} answered.
+    </div>
+    <div id="unansweredWarning" style="display:none; margin-bottom:12px; padding:10px; border-radius:8px; border:1px solid var(--warning); background: rgba(245, 158, 11, 0.1); color: var(--text);">
+      You still have <strong id="missingCount">0</strong> unanswered question(s). You can submit now or review them.
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button type="button" class="btn" id="reviewUnanswered" style="display:none;">Review Unanswered</button>
+      <button type="button" class="btn" id="cancelSubmit">Cancel</button>
+      <button type="button" class="btn btn-primary" id="confirmSubmit" disabled>Submit</button>
+    </div>
+  </div>
+ </div>
+
+<script>
+  // Highlight selection and update progress on change
+  document.addEventListener('change', function(e) {
+    if (e.target.matches('input[name="choice"]')) {
+      document.querySelectorAll('.option-card').forEach(el => el.classList.remove('selected'))
+      const card = e.target.closest('.option-card')
+      if (card) card.classList.add('selected')
+
+      // mark current question as answered in sidebar
+      const current = document.querySelector('.qdot.current')
+      if (current && !current.classList.contains('answered')) current.classList.add('answered')
+      // increment answered count only if not already counted
+      const answeredCountEl = document.getElementById('answeredCount')
+      let currentCount = parseInt(answeredCountEl.textContent || '0', 10)
+      if (current && current.classList.contains('answered') && !current.dataset.counted) {
+        current.dataset.counted = '1'
+        currentCount += 1
+        answeredCountEl.textContent = currentCount
+        const bar = document.getElementById('progressBar')
+        const total = {{ total }}
+        bar.style.width = Math.round((currentCount/total)*100) + '%'
+        const modalCount = document.getElementById('answeredCountModal')
+        if (modalCount) modalCount.textContent = currentCount
+      }
+    }
+  })
+
+  // Submit modal handlers
+  const openBtn = document.getElementById('openSubmit')
+  const modal = document.getElementById('submitModal')
+  const cancelBtn = document.getElementById('cancelSubmit')
+  const confirmBtn = document.getElementById('confirmSubmit')
+  const navField = document.getElementById('navField')
+
+  function getAnsweredCount(){
+    // Prefer sidebar count for accuracy across page navigation
+    const dots = document.querySelectorAll('.qdot');
+    const answered = document.querySelectorAll('.qdot.answered').length;
+    return dots.length ? answered : (parseInt(document.getElementById('answeredCount')?.textContent || '0',10));
+  }
+
+  function openModal(){
+    const total = {{ total }};
+    const answered = getAnsweredCount();
+    const missing = Math.max(0, total - answered);
+    const ansEl = document.getElementById('answeredCountModal');
+    if (ansEl) ansEl.textContent = String(answered);
+    const warn = document.getElementById('unansweredWarning');
+    const missEl = document.getElementById('missingCount');
+    const confirmBtn = document.getElementById('confirmSubmit');
+    const reviewBtn = document.getElementById('reviewUnanswered');
+
+    if (missEl) missEl.textContent = String(missing);
+    if (missing > 0){
+      if (warn) warn.style.display = 'block';
+      if (reviewBtn) reviewBtn.style.display = 'inline-flex';
+      if (confirmBtn) confirmBtn.disabled = false; // allow submit with unanswered
+    } else {
+      if (warn) warn.style.display = 'none';
+      if (reviewBtn) reviewBtn.style.display = 'none';
+      if (confirmBtn) confirmBtn.disabled = false;
+    }
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+  }
+  function closeModal(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true') }
+  if (openBtn) openBtn.addEventListener('click', openModal)
+  const openBtnBottom = document.getElementById('openSubmitBottom');
+  if (openBtnBottom) openBtnBottom.addEventListener('click', openModal)
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal)
+  if (confirmBtn) confirmBtn.addEventListener('click', function(){
+    navField.value = 'submit'
+    modal.classList.remove('open')
+    modal.setAttribute('aria-hidden','true')
+    // submit the closest form
+    document.querySelector('form.quiz-card')?.submit()
+  })
+
+  const reviewBtn = document.getElementById('reviewUnanswered')
+  if (reviewBtn) reviewBtn.addEventListener('click', function(){
+    // Go to the first unanswered question
+    const firstUnanswered = document.querySelector('.qdot:not(.answered)')
+    if (firstUnanswered && firstUnanswered.getAttribute('href')){
+      window.location.href = firstUnanswered.getAttribute('href')
+    }
+  })
+
+  // Countdown timer and auto-submit
+  const layout = document.getElementById('quizLayout')
+  const deadlineEpoch = parseInt(layout?.dataset.deadline || '0', 10) * 1000
+  const timerEl = document.getElementById('timer')
+  const formEl = document.querySelector('form.quiz-card')
+
+  function pad(n){ return (n<10?'0':'') + n }
+  function tick(){
+    const now = Date.now()
+    const diff = Math.max(0, Math.floor((deadlineEpoch - now)/1000))
+    const m = Math.floor(diff/60)
+    const s = diff % 60
+    if (timerEl) timerEl.textContent = pad(m) + ':' + pad(s)
+    if (diff <= 0){
+      // Auto submit
+      if (navField) navField.value = 'submit'
+      formEl?.submit()
+      return
+    }
+  }
+  if (deadlineEpoch) {
+    tick()
+    setInterval(tick, 1000)
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <form method="post" enctype="multipart/form-data" class="profile-form">
+        {% csrf_token %}
+        
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <div class="profile-image-container" style="position: relative; width: 150px; height: 150px; margin: 0 auto;">
+                {% if user.profile.image %}
+                    <img src="{{ user.profile.image.url }}" alt="Profile picture" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary);">
+                {% else %}
+                    <div style="width: 150px; height: 150px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                {% endif %}
+                
+                <label for="{{ p_form.image.id_for_label }}" style="position: absolute; bottom: 0; right: 0; background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </label>
+                {{ p_form.image }}
+            </div>
+
+            <div style="margin: 2rem 0;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="{{ u_form.username.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">Username</label>
+                    {{ u_form.username }}
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="{{ u_form.email.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">Email</label>
+                    {{ u_form.email }}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="{{ u_form.first_name.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">First Name</label>
+                        {{ u_form.first_name }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ u_form.last_name.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">Last Name</label>
+                        {{ u_form.last_name }}
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin: 1rem 0;">
+                    <label for="{{ p_form.bio.id_for_label }}" style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 500;">Bio</label>
+                    {{ p_form.bio }}
+                </div>
+            </div>
+
+            <button type="submit" class="btn" style="min-width: 200px;">Save Changes</button>
+        </div>
+    </form>
+
+    <div class="profile-stats">
+        <div class="stat-card">
+            <h4>Total Quizzes</h4>
+            <div class="stat-number">{{ quiz_count }}</div>
+        </div>
+        
+        <div class="stat-card">
+            <h4>Average Score</h4>
+            <div class="stat-number">{{ avg_score }}%</div>
+        </div>
+        
+        <div class="stat-card">
+            <h4>Best Score</h4>
+            <div class="stat-number">{{ best_score }}%</div>
+        </div>
+    </div>
+
+    <div style="background: var(--bg-card); border-radius: var(--radius); padding: 2rem; margin-top: 2rem;">
+        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            Recent Activity
+        </h3>
+
+        {% if recent_attempts %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for attempt in recent_attempts %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg); border-radius: var(--radius);">
+                        <div>
+                            <div style="font-weight: 500;">{{ attempt.quiz.title }}</div>
+                            <div style="color: var(--text); opacity: 0.7; font-size: 0.875rem;">
+                                {{ attempt.created_at|date:"F j, Y" }}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-weight: 500; color: {% if attempt.score >= 80 %}var(--success){% elif attempt.score >= 60 %}var(--warning){% else %}var(--danger){% endif %};">
+                                {{ attempt.score }}%
+                            </div>
+                            <a href="{% url 'quiz_result' attempt.id %}" class="btn" style="background: var(--text);">
+                                View Results
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 2rem;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" style="opacity: 0.5; margin-bottom: 1rem;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4m0-4h.01"/>
+                </svg>
+                <p style="color: var(--text); opacity: 0.8;">No quiz attempts yet</p>
+                <a href="{% url 'quiz_list' %}" class="btn" style="margin-top: 1rem;">Take a Quiz</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .profile-image-container input[type="file"] {
+        display: none;
+    }
+
+    .profile-form .form-group {
+        text-align: left;
+    }
+
+    .profile-form textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Preview image before upload
+        const imageInput = document.querySelector('input[type="file"]');
+        const profileImage = document.querySelector('.profile-image-container img');
+        
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    if (profileImage) {
+                        profileImage.src = e.target.result;
+                    } else {
+                        const newImage = document.createElement('img');
+                        newImage.src = e.target.result;
+                        newImage.alt = 'Profile picture';
+                        newImage.style = 'width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary);';
+                        document.querySelector('.profile-image-container div').replaceWith(newImage);
+                    }
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    });
+</script>
+{% endblock %}
