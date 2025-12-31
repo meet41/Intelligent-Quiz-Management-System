@@ -1,4 +1,5 @@
 # IntelligentQuiz Project By: Meet Patel
+## Part of Infosys SpringBoard Virtual Internship Project
 
 A simple multi-app Django project for creating and taking quizzes. Includes:
 - Quizzes with categories, questions, and choices
@@ -11,13 +12,12 @@ A simple multi-app Django project for creating and taking quizzes. Includes:
 1) Open a terminal in the project folder:
 
 ```powershell
-cd "E:\Infosys SpringBoard Internship\IntelligentQuiz"
+cd "\SmartQuiz\"
 ```
 
 2) Activate the virtual environment (created at the workspace root):
 
 ```powershell
-# If your venv is at E:\Infosys SpringBoard Internship\.venv
 ..\.venv\Scripts\Activate.ps1
 ```
 
@@ -68,29 +68,6 @@ Open http://127.0.0.1:8000/ in your browser.
 - Attempt(user, quiz, score, total)
 - Answer(attempt, question, selected_choice)
 
-## Troubleshooting
-
-- If PowerShell blocks activation, run PowerShell as Administrator once and execute:
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-- To log your terminal session:
-
-```powershell
-Start-Transcript -Path .\session.log
-# ...run your commands...
-Stop-Transcript
-```
-
-- If `pip install` fails, upgrade build tools and retry:
-
-```powershell
-python -m pip install --upgrade pip setuptools wheel
-pip install --only-binary=:all: pillow
-```
-
 ## Project structure (high level)
 
 - `IntelligentQuiz/` – project settings and URLs
@@ -110,9 +87,6 @@ This guide gets you from zero to a working Django quiz app with users, quizzes, 
 - Python 3.11+ (tested with 3.13)
 - Windows PowerShell (ExecutionPolicy set to `RemoteSigned`)
 
-Optional (for logging your session):
-- Start logging: `Start-Transcript -Path .\setup-log.txt`
-- Stop logging: `Stop-Transcript`
 
 ## 1) Create and activate a virtual environment
 From the project folder containing `.venv` (or create one if you don’t have it):
