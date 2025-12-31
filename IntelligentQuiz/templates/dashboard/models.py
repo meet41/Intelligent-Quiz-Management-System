@@ -270,34 +270,35 @@ class Answer(models.Model):
 			models.Index(fields=["attempt", "question"]),
 		]
 
+    
 
 
 # Create your models here.
 
 
-class Explanation(models.Model):
-	"""AI-generated explanation for a question.
+	class Explanation(models.Model):
+		"""AI-generated explanation for a question.
 
-	Explanations are generally scoped to a Question (and its correct answer). They can be
-	reused across attempts and users. Feedback counts help improve future versions.
-	"""
+		Explanations are generally scoped to a Question (and its correct answer). They can be
+		reused across attempts and users. Feedback counts help improve future versions.
+		"""
 
-	question = models.ForeignKey(Question, related_name='explanations', on_delete=models.CASCADE)
-	summary = models.TextField(blank=True)
-	resources = models.JSONField(default=list, help_text="List of {title, url} links")
-	provider = models.CharField(max_length=32, blank=True)
-	helpful = models.PositiveIntegerField(default=0)
-	not_helpful = models.PositiveIntegerField(default=0)
-	created_at = models.DateTimeField(auto_now_add=True)
-	updated_at = models.DateTimeField(auto_now=True)
+		question = models.ForeignKey(Question, related_name='explanations', on_delete=models.CASCADE)
+		summary = models.TextField(blank=True)
+		resources = models.JSONField(default=list, help_text="List of {title, url} links")
+		provider = models.CharField(max_length=32, blank=True)
+		helpful = models.PositiveIntegerField(default=0)
+		not_helpful = models.PositiveIntegerField(default=0)
+		created_at = models.DateTimeField(auto_now_add=True)
+		updated_at = models.DateTimeField(auto_now=True)
 
-	class Meta:
-		indexes = [
-			models.Index(fields=["question", "-created_at"]),
-		]
+		class Meta:
+			indexes = [
+				models.Index(fields=["question", "-created_at"]),
+			]
 
-	def __str__(self) -> str:
-		return f"Explanation for Q{self.question_id} (👍{self.helpful}/👎{self.not_helpful})"
+		def __str__(self) -> str:
+			return f"Explanation for Q{self.question_id} (👍{self.helpful}/👎{self.not_helpful})"
 
 
 class AIQuestionDraft(models.Model):

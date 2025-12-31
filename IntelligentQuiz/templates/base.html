@@ -24,7 +24,18 @@
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="soft-theme">
+    <!-- Global loader overlay -->
+    <div id="global-loader" class="global-loader" aria-hidden="true" hidden>
+        <div class="global-loader-content" role="status" aria-live="polite">
+            <div class="loader-brand">
+                <img src="{% static 'img/favicon.png' %}" alt="Logo" style="height: 80px;" class="loader-logo" onerror="this.style.display='none'"/>
+                <span class="loader-title">Intelligent Quiz</span>
+            </div>
+            <div class="loader-spinner" aria-hidden="true"></div>
+            <div class="loader-message">Working on it…</div>
+        </div>
+    </div>
     <header>
         <div class="container">
             <h1 class="site-logo">
@@ -36,7 +47,12 @@
             <nav>
                 <ul>
                     <li><a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'dashboard_stats' %}" class="{% if 'stats' in request.path %}active{% endif %}">Dashboard</a></li>
+                        <li><a href="{% url 'quiz_history' %}" class="{% if 'history' in request.path %}active{% endif %}">History</a></li>
+                    {% endif %}
                     <li><a href="{% url 'quiz_list' %}" class="{% if 'quiz' in request.path %}active{% endif %}">Quizzes</a></li>
+                    <li><a href="{% url 'leaderboard' %}" class="{% if 'leaderboard' in request.path %}active{% endif %}">Leaderboard</a></li>
                     <li>
                         <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false" title="Toggle dark mode">
                             <span class="icon-sun" aria-hidden="true" style="display:none">☀️</span>
@@ -153,6 +169,7 @@
         </div>
     </footer>
 
-    <script src="{% static 'js/scripts.js' %}" defer></script>  
+    <script src="{% static 'js/scripts.js' %}" defer></script>
+    {% block extra_scripts %}{% endblock %}  
 </body>
 </html>

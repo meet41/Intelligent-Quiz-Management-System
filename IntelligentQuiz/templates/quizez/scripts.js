@@ -3,29 +3,10 @@
 // Add interactive features to the quiz interface
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Apply fade-in animations to main content
-    const mainContent = document.querySelector('main');
-    if (mainContent) {
-        mainContent.classList.add('fade-in');
-    }
-
-
-    // Stagger animations for cards
-    const cards = document.querySelectorAll('.quiz-card, .category-card, .stat-card');
-    cards.forEach((card, index) => {
-        if (index < 3) {
-            card.classList.add('fade-in', `fade-in-delay-${Math.min(index + 1, 3)}`);
-        } else {
-            card.classList.add('fade-in');
-        }
-    });
-
-
     // Global loader helper
     (function initGlobalLoader(){
         const el = document.getElementById('global-loader');
         const msgEl = el ? el.querySelector('.loader-message') : null;
-        
         function show(message){
             if (!el) return;
             if (msgEl && message) msgEl.textContent = message;
@@ -39,10 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
             el.setAttribute('aria-hidden','true');
             try { document.body.removeAttribute('aria-busy'); } catch(e) {}
         }
-
-        
-        // Immediately hide loader on page load
-        hide();
         function wrap(promise, message){
             show(message);
             return Promise.resolve(promise).finally(hide);
@@ -53,35 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Auto-bind to forms/buttons with data-global-loader
         document.querySelectorAll('form[data-global-loader]')
-            .forEach(f => f.addEventListener('submit', (e) => {
-                const msg = f.dataset.globalLoader || 'Working on it…';
-                show(msg);
-
-                // Ensure the loader paints before navigation by deferring submission once
-                if (!f.dataset.loaderArmed) {
-                    e.preventDefault();
-                    f.dataset.loaderArmed = '1';
-
-                    // next frame to allow paint
-                    requestAnimationFrame(() => {
-                        setTimeout(() => f.submit(), 0);
-                    });
-                }
-            }));
+            .forEach(f => f.addEventListener('submit', () => show(f.dataset.globalLoader || 'Working on it…')));
         document.querySelectorAll('[data-show-loader]')
-            .forEach(btn => btn.addEventListener('click', (e) => {
-                const msg = btn.dataset.showLoader || 'Working on it…';
-                const href = btn.getAttribute('href');
-
-                // For anchors, delay navigation to allow a paint
-                if (href) {
-                    e.preventDefault();
-                    show(msg);
-                    requestAnimationFrame(() => { setTimeout(() => { window.location.href = href; }, 0); });
-                } else {
-                    show(msg);
-                }
-            }));
+            .forEach(btn => btn.addEventListener('click', () => show(btn.dataset.showLoader || 'Working on it…')));
 
         // Hide on page show from bfcache
         window.addEventListener('pageshow', () => hide());
@@ -180,10 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', () => {
             const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
-
-            // If a global loader is present for this form, don't overwrite button label
-            if (!form.matches('[data-global-loader]') && submitBtn) {
+            if (submitBtn) {
+                submitBtn.disabled = true;
                 submitBtn.textContent = 'Please wait...';
             }
         });

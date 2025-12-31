@@ -17,7 +17,7 @@
   </form>
   {% endif %}
 
-  <form method="post" action="{% url 'start_quiz' category.slug %}" id="start-form">
+  <form method="post" action="{% url 'start_quiz' category.slug %}" id="start-form" data-global-loader="Generating AI quiz…">
     {% csrf_token %}
     {% if has_subcategories %}
     <div class="category-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:1rem; margin-bottom:1.25rem;">

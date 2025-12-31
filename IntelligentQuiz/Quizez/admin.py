@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Subcategory, Quiz, Question, Choice, Attempt, Answer, AIQuestionDraft
+from .models import Category, Subcategory, Quiz, Question, Choice, Attempt, Answer, AIQuestionDraft, Explanation
 
 
 @admin.register(Category)
@@ -81,4 +81,11 @@ class AIQuestionDraftAdmin(admin.ModelAdmin):
 			except Exception as exc:
 				skipped += 1
 		self.message_user(request, f"Imported: {success}, Skipped: {skipped}")
+
+
+@admin.register(Explanation)
+class ExplanationAdmin(admin.ModelAdmin):
+	list_display = ("question", "provider", "helpful", "not_helpful", "created_at")
+	list_filter = ("provider", "created_at")
+	search_fields = ("question__text", "summary")
 

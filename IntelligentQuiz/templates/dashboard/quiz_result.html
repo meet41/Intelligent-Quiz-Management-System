@@ -11,26 +11,25 @@
     <div style="text-align: center; margin-bottom: 3rem;">
         <h2 style="font-size: 2rem; margin-bottom: 1rem;">{{ attempt.quiz.title }}</h2>
 
-        {% with percentage=attempt.score %}
+                {% with percentage=attempt.score %}
         <div style="margin: 2rem 0;">
-            {% if percentage >= 80 %}
-                        <div class="score-ring ring-success">
-            {% elif percentage >= 60 %}
-                        <div class="score-ring ring-warn">
-            {% else %}
-                        <div class="score-ring ring-danger">
-            {% endif %}
-                {{ percentage }}%
-            </div>
+                        {% if percentage >= 80 %}
+                            <div class="score-ring ring-success" id="scoreRing">
+                        {% elif percentage >= 60 %}
+                            <div class="score-ring ring-warn" id="scoreRing">
+                        {% elif percentage >= 50 %}
+                            <div class="score-ring ring-warn" id="scoreRing">
+                        {% else %}
+                            <div class="score-ring ring-warn" id="scoreRing">
+                        {% endif %}
+                                <span id="scoreNumber">0%</span>
+                        </div>
                         <div style="margin-top:.5rem; font-weight:600;">
-                                Grade:
-                                <span style="padding:.2rem .6rem; border-radius:.5rem; border:1px solid var(--border); background: var(--bg-card); color: var(--text);">
-                                    {% if percentage > 80 %}A
-                                    {% elif percentage >= 60 %}B
-                                    {% elif percentage >= 30 %}C
-                                    {% else %}D{% if percentage < 25 %} (Fail){% endif %}
-                                    {% endif %}
-                                </span>
+                            Outcome:
+                            <span style="padding:.2rem .6rem; border-radius:.5rem; border:1px solid var(--border); background: var(--bg-card); color: var(--text);">
+                                {% if percentage >= 80 %}Outstanding!{% elif percentage >= 60 %}Great Work!{% elif percentage >= 50 %}Nice Warm‑up!{% else %}Room to grow!{% endif %}
+                            </span>
+                            <span style="margin-left:.5rem; color:var(--primary)">+50 XP</span>
                         </div>
             <div style="margin-top: .75rem; color: var(--text); opacity: .8;">
                 Correct: <strong>{{ correct_count }}</strong> / {{ attempt.total }}
@@ -39,20 +38,20 @@
                 Time taken: <strong>{{ time_taken_display }}</strong>
             </div>
 
-            <p style="font-size: 1.25rem; margin-top: 1rem;">
+            <p style="font-size: 1.1rem; margin-top: .75rem; opacity:.85;">
                 {% if percentage >= 80 %}
-                    <span style="color: var(--success)">Excellent!</span>
+                    You're on fire — keep the streak going!
                 {% elif percentage >= 60 %}
-                    <span style="color: #f59e0b">Good effort!</span>
+                    Solid performance — a little practice will make it perfect.
                 {% else %}
-                    <span style="color: var(--danger)">Keep practicing!</span>
+                    Every attempt earns XP. Try a recommended practice next!
                 {% endif %}
             </p>
         </div>
         {% endwith %}
     </div>
 
-    <details style="margin-bottom: 2rem;">
+    <details style="margin-bottom: 2rem;" id="reviewDetails">
         <summary style="padding: 1rem; background: var(--bg-card); border-radius: var(--radius); cursor: pointer; user-select: none;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <span style="font-weight: 500;">Review Answers</span>
@@ -63,19 +62,18 @@
         </summary>
         
     <div style="margin-top: 1rem;">
-            {% for q,a in review_items %}
+            {% for a in answers %}
         <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                     <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
                         <span style="background: var(--bg); color: var(--text); width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500; flex-shrink: 0;">
                             {{ forloop.counter }}
                         </span>
-                        <div style="font-weight: 500;">{{ q.text }}</div>
+                        <div style="font-weight: 500;">{{ a.question.text }}</div>
                     </div>
 
                     <div style="margin-left: 3rem;">
                         <div style="margin-bottom: 0.5rem;">
                             <span style="color: var(--text); opacity: 0.7;">Your answer:</span>
-                            {% if a %}
                             {% if a.is_correct %}
                             <div style="padding: 0.75rem; border-radius: var(--radius); margin-top: 0.5rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35);">
                                 {% if a.selected_choice %}
@@ -89,7 +87,7 @@
                                     <em>No answer selected</em>
                                 {% endif %}
                             </div>
-                            {% else %} {# answered but incorrect #}
+                            {% else %}
                             <div style="padding: 0.75rem; border-radius: var(--radius); margin-top: 0.5rem; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35);">
                                 {% if a.selected_choice %}
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -103,41 +101,36 @@
                                 {% endif %}
                             </div>
                             {% endif %}
-                            {% else %}
-                            <div style="padding: 0.75rem; border-radius: var(--radius); margin-top: 0.5rem; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);">
-                                <em>Skipped</em>
-                            </div>
-                            {% endif %}
                         </div>
 
-                        <div>
-                            <span style="color: var(--text); opacity: 0.7;">Correct answer:</span>
-                            <div style="padding: 0.75rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius); margin-top: 0.5rem;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
-                                        <path d="M20 6L9 17l-5-5"/>
-                                    </svg>
-                                    {{ q.correct_choice.text }}
-                                </div>
-                            </div>
-                        </div>
-                        {% if a and not a.is_correct %}
-                        <div data-answer-id="{{ a.id }}" data-url="{% url 'answer_explanation' a.id %}" class="explain-wrap" style="margin-top: .75rem;">
-                            <button type="button" class="btn btn-outline explain-btn">Explain</button>
-                            <div class="explain-panel" style="display:none; margin-top:.5rem; padding: .9rem; border:1px solid var(--border); background: var(--bg-card); border-radius: var(--radius);">
-                                <div class="explain-loading" style="opacity:.8;">Loading explanation…</div>
-                                <div class="explain-content" style="display:none;">
-                                    <div class="explain-text" style="margin-bottom:.5rem;"></div>
-                                    <div class="explain-links" style="margin-top:.5rem;"></div>
-                                    <div class="explain-feedback" style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center;">
-                                        <span style="opacity:.7;">Was this helpful?</span>
-                                        <button type="button" class="btn btn-sm btn-outline fb-helpful">Helpful</button>
-                                        <button type="button" class="btn btn-sm btn-outline fb-not">Not helpful</button>
-                                        <span class="fb-counts" style="margin-left:.5rem; opacity:.7;"></span>
+                        {% if not a.is_correct %}
+                            <div>
+                                <span style="color: var(--text); opacity: 0.7;">Correct answer:</span>
+                                <div style="padding: 0.75rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius); margin-top: 0.5rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                                            <path d="M20 6L9 17l-5-5"/>
+                                        </svg>
+                                        {{ a.question.correct_choice.text }}
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                            <div data-answer-id="{{ a.id }}" data-url="{% url 'answer_explanation' a.id %}" class="explain-wrap" style="margin-top: .75rem;">
+                                <button type="button" class="btn btn-outline explain-btn">Explain</button>
+                                <div class="explain-panel" style="display:none; margin-top:.5rem; padding: .9rem; border:1px solid var(--border); background: var(--bg-card); border-radius: var(--radius);">
+                                    <div class="explain-loading" style="opacity:.8;">Loading explanation…</div>
+                                    <div class="explain-content" style="display:none;">
+                                        <div class="explain-text" style="margin-bottom:.5rem;"></div>
+                                        <div class="explain-links" style="margin-top:.5rem;"></div>
+                                        <div class="explain-feedback" style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center;">
+                                            <span style="opacity:.7;">Was this helpful?</span>
+                                            <button type="button" class="btn btn-sm btn-outline fb-helpful">Helpful</button>
+                                            <button type="button" class="btn btn-sm btn-outline fb-not">Not helpful</button>
+                                            <span class="fb-counts" style="margin-left:.5rem; opacity:.7;"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
@@ -159,17 +152,52 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const details = document.querySelector('details');
-        const arrow = details.querySelector('svg');
+        document.addEventListener('DOMContentLoaded', function() {
+                const details = document.getElementById('reviewDetails');
+                const arrow = details.querySelector('svg');
         
-        details.addEventListener('toggle', function() {
-            if (this.open) {
-                arrow.style.transform = 'rotate(180deg)';
-            } else {
-                arrow.style.transform = 'rotate(0deg)';
-            }
-        });
+                details.addEventListener('toggle', function() {
+                        arrow.style.transform = this.open ? 'rotate(180deg)' : 'rotate(0deg)';
+                });
+
+                // Count-up score animation
+                const pct = {{ attempt.score }};
+                const numEl = document.getElementById('scoreNumber');
+                let cur = 0;
+                const int = setInterval(()=>{
+                    cur += Math.max(1, Math.round(pct/40));
+                    if (cur >= pct) { cur = pct; clearInterval(int); }
+                    if (numEl) numEl.textContent = cur + '%';
+                }, 20);
+
+                // Auto-open review if there are incorrect answers
+                const anyWrong = {{ correct_count }} < {{ attempt.total }};
+                if (anyWrong) { details.open = true; arrow.style.transform = 'rotate(180deg)'; }
+
+                // Lightweight confetti for high scores
+                if (pct >= 80) {
+                    const c = document.createElement('div');
+                    c.style.position='fixed'; c.style.inset='0'; c.style.pointerEvents='none'; c.style.zIndex='9998';
+                    document.body.appendChild(c);
+                    const colors = ['#10b981','#3b82f6','#f59e0b','#ef4444','#a78bfa'];
+                    for(let i=0;i<120;i++){
+                        const p = document.createElement('span');
+                        p.style.position='absolute';
+                        p.style.left = Math.random()*100 + 'vw';
+                        p.style.top = '-10px';
+                        p.style.width = '8px'; p.style.height='14px';
+                        p.style.background = colors[i%colors.length];
+                        p.style.opacity='.9'; p.style.borderRadius='2px';
+                        const duration = 1500 + Math.random()*1200;
+                        const delay = Math.random()*200;
+                        p.animate([
+                            { transform: `translateY(0) rotate(0deg)` },
+                            { transform: `translateY(100vh) rotate(${(Math.random()*360)|0}deg)` }
+                        ], { duration, delay, easing:'cubic-bezier(.2,.6,.2,1)', fill:'forwards' });
+                        c.appendChild(p);
+                    }
+                    setTimeout(()=> c.remove(), 3000);
+                }
 
         function getCookie(name) {
             const value = `; ${document.cookie}`;

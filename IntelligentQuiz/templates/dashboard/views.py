@@ -235,14 +235,8 @@ def take_quiz(request, quiz_id: int):
 def quiz_result(request, attempt_id: int):
 	attempt = get_object_or_404(Attempt.objects.select_related('quiz', 'user'), pk=attempt_id, user=request.user)
 	answers = attempt.answers.select_related('question', 'selected_choice').all()
-	# Map answers by question id to allow inclusion of skipped questions
-	answer_by_qid = {a.question_id: a for a in answers}
-	# Full ordered question list for the quiz
-	questions = list(attempt.quiz.questions.all())
-	# Build review items preserving original quiz order: each item is (question, answer or None)
-	review_items = [(q, answer_by_qid.get(q.id)) for q in questions]
-	# Compute correct count for display (raw correct answers)
-	correct_count = sum(1 for a in answers if a.is_correct_cached)
+	# Compute correct count for display (score is stored as percent)
+	correct_count = answers.filter(is_correct_cached=True).count()
 	# Format time taken (fallback to completed_at - started_at if missing)
 	secs = attempt.time_taken
 	if secs is None and attempt.started_at and attempt.completed_at:
@@ -253,8 +247,7 @@ def quiz_result(request, attempt_id: int):
 	time_taken_display = f"{m:02d}:{s:02d}"
 	return render(request, 'quizez/quiz_result.html', {
 		'attempt': attempt,
-		'review_items': review_items,
-		'answers': answers,  # kept for backward compatibility if template pieces still reference it
+		'answers': answers,
 		'correct_count': correct_count,
 		'time_taken_display': time_taken_display,
 	})
@@ -375,7 +368,7 @@ def quiz_session(request, quiz_id: int):
 	answered_count = len(answered_qids)
 
 	if request.method == 'POST':
-		nav = request.POST.get('nav', 'next')  # 'prev' | 'next' | 'skip' | 'submit'
+		nav = request.POST.get('nav', 'next')  # 'prev' | 'next' | 'submit'
 		choice_id = request.POST.get('choice')
 
 		# Save or update answer selection for current question
@@ -404,7 +397,7 @@ def quiz_session(request, quiz_id: int):
 			# Redirect to result page; profile will reflect stats automatically
 			return redirect('quiz_result', attempt_id=attempt.id)
 
-		# Otherwise, move index for prev/next/skip
+		# Otherwise, move index for prev/next
 		if nav == 'prev':
 			idx = max(0, idx - 1)
 		else:

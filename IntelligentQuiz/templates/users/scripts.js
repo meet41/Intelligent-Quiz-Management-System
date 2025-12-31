@@ -1,6 +1,8 @@
 // Basic JS placeholder
+
 // Add interactive features to the quiz interface
 document.addEventListener('DOMContentLoaded', () => {
+
     // Highlight active navigation link
     const currentPath = window.location.pathname;
     document.querySelectorAll('nav a').forEach(link => {
@@ -9,15 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+
     // Enhance radio button interactions
     document.querySelectorAll('.choice-list input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', () => {
+
             // Remove active state from all labels in the group
             const list = radio.closest('.choice-list');
             list.querySelectorAll('label').forEach(label => {
                 label.style.background = '';
                 label.style.borderColor = 'var(--border)';
             });
+
             
             // Add active state to selected label
             const label = radio.closest('label');
@@ -27,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
 
     // Auto-hide flash messages after 5 seconds
     const messages = document.querySelector('.messages');
@@ -40,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     }
 
+
     // Add loading state to forms
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', () => {
@@ -51,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+
     // Add animation to quiz cards
     document.querySelectorAll('.quiz-card').forEach(card => {
         card.addEventListener('mouseenter', () => {
@@ -61,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+
     // Initialize tooltips for question explanations
     const explanations = document.querySelectorAll('.explanation');
     explanations.forEach(exp => {
@@ -68,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         exp.title = 'Click to see explanation';
     });
 });
+
 
 // Add smooth scrolling to all anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -81,6 +91,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         }
     });
 });
+
 
 // Show confirmation dialog before deleting items
 document.querySelectorAll('.delete-btn').forEach(btn => {

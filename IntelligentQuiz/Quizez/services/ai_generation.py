@@ -58,9 +58,9 @@ def _extract_json_blob(text: str) -> Optional[str]:
     # Try to find the first JSON object in the text
     if not text:
         return None
-    # Strip code fences if present
+    
     text = re.sub(r"^```(json)?|```$", "", text.strip(), flags=re.IGNORECASE | re.MULTILINE)
-    # Find outermost braces
+    
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
@@ -109,20 +109,18 @@ def _gemini_call(prompt: str, model: Optional[str] = None, timeout: int = 30) ->
       first text-capable model using generateContent.
     - Returns (text, meta) where meta contains chosen model and discovery info.
     """
-    import google.generativeai as genai  # type: ignore
+    import google.generativeai as genai
 
     api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("Missing GOOGLE_API_KEY/GEMINI_API_KEY for Gemini provider")
 
-    # Basic sanity check: Gemini API keys from AI Studio typically start with 'AIza'
     if not (api_key.startswith("AIza") or api_key.startswith("ya29") or api_key.startswith("gsk_")):
         # Don't block, but include a helpful meta hint
         pass
 
     genai.configure(api_key=api_key)
 
-    # Try to resolve a valid model
     explicit = model or os.getenv("GEMINI_MODEL")
     available_models = []
     try:
@@ -132,15 +130,12 @@ def _gemini_call(prompt: str, model: Optional[str] = None, timeout: int = 30) ->
             and "generateContent" in m.supported_generation_methods
         ]
     except Exception:
-        # Listing can fail on some accounts; we'll fallback to known names
         available_models = []
 
-    # list_models returns names like 'models/gemini-2.5-flash' – the SDK accepts plain ids.
     def _plain(n: str) -> str:
         return n.split("/")[-1] if "/" in n else n
     available_plain = [_plain(n) for n in available_models]
 
-    # Preferred candidates in order
     preferred = [
         # Latest naming
         "gemini-flash-latest",
@@ -160,12 +155,9 @@ def _gemini_call(prompt: str, model: Optional[str] = None, timeout: int = 30) ->
     chosen: Optional[str] = None
     if explicit:
         chosen = explicit
-        # If we could list models and the explicit one isn't present, fall back
-        if available_plain and _plain(chosen) not in available_plain:
-            chosen = None
 
     if not chosen:
-        # If we have a list, pick the first preferred that exists; otherwise use the first available
+        
         if available_plain:
             for p in preferred:
                 if p in available_plain:
@@ -241,3 +233,75 @@ def generate_questions(topic: str, difficulty: str = "medium", num_questions: in
 
     parsed = _normalize_items(parsed_dict.get("items") if isinstance(parsed_dict, dict) else [])
     return {"prompt": prompt, "raw": raw, "parsed": parsed, "provider": provider, "meta": meta}
+
+
+def _build_explain_prompt(question_text: str, correct_answer: str, user_answer: Optional[str] = None) -> str:
+    contrast = f"\nUser's answer: {user_answer}" if user_answer else ""
+    return (
+        "You are a tutor. Explain the correct answer clearly and concisely. Return strict JSON only.\n"
+        f"Question: {question_text}\n"
+        f"Correct answer: {correct_answer}\n"
+        f"{contrast}\n\n"
+        "Return JSON with this schema: {\n"
+        "  \"explanation\": string,\n"
+        "  \"resources\": [ { \"title\": string, \"url\": string }, ... ]\n"
+        "}\n"
+        "Guidelines: Keep 3-6 sentences. If user's answer is provided, contrast succinctly."
+    )
+
+
+def generate_explanation(question_text: str, correct_answer: str, user_answer: Optional[str] = None,
+                         provider: Optional[str] = None) -> Dict[str, Any]:
+    """Generate an explanation JSON: {explanation: str, resources: [{title,url}], provider, meta}."""
+    provider = provider or os.getenv("AI_PROVIDER")
+    if not provider:
+        if os.getenv("OPENAI_API_KEY"):
+            provider = "openai"
+        elif os.getenv("ANTHROPIC_API_KEY"):
+            provider = "anthropic"
+        elif os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY"):
+            provider = "gemini"
+        else:
+            raise ValueError("No AI provider configured. Set AI_PROVIDER and corresponding API key in .env")
+
+    prompt = _build_explain_prompt(question_text, correct_answer, user_answer)
+
+    raw = ""
+    meta: Dict[str, Any] = {}
+
+    if provider == "openai":
+        raw, meta = _openai_call(prompt)
+    elif provider == "anthropic":
+        raw, meta = _anthropic_call(prompt)
+    elif provider == "gemini":
+        raw, meta = _gemini_call(prompt)
+    else:
+        raise ValueError(f"Unknown AI provider: {provider}")
+
+    blob = _extract_json_blob(raw) or raw
+    data: Dict[str, Any]
+    try:
+        data = json.loads(blob)
+    except Exception:
+        data = {}
+    explanation = (data.get("explanation") if isinstance(data, dict) else None) or ""
+    resources = (data.get("resources") if isinstance(data, dict) else None) or []
+    # Normalize resources list
+    norm_resources: List[Dict[str, str]] = []
+    for r in resources:
+        try:
+            title = str(r.get("title") or "Learn more")
+            url = str(r.get("url") or "")
+            if url:
+                norm_resources.append({"title": title, "url": url})
+        except Exception:
+            continue
+
+    return {
+        "explanation": explanation.strip(),
+        "resources": norm_resources,
+        "provider": provider,
+        "meta": meta,
+        "raw": raw,
+        "prompt": prompt,
+    }

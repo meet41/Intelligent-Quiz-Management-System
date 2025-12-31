@@ -87,13 +87,14 @@
         {{ counter }} / {{ total }}
       </div>
       {% if has_next %}
-        <button type="submit" name="nav" value="next" class="btn btn-primary">
-          Next →
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button type="submit" name="nav" value="skip" class="btn" title="Skip without answering">Skip →</button>
+          <button type="submit" name="nav" value="next" class="btn btn-primary">Next →</button>
+        </div>
       {% else %}
-        <button type="submit" name="nav" value="submit" class="btn btn-primary">
-          Submit
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" id="openSubmitBottom" class="btn btn-primary">Submit</button>
+        </div>
       {% endif %}
     </div>
   </form>
@@ -120,10 +121,16 @@
 <div class="modal" id="submitModal" aria-hidden="true">
   <div class="panel">
     <div style="font-weight:700; font-size:1.1rem; margin-bottom:8px;">Submit Quiz?</div>
-    <div style="color:#6b7280; margin-bottom:16px;">You have <strong id="answeredCountModal">{{ answered_count }}</strong> of {{ total }} answered. Are you sure you want to submit?</div>
+    <div id="submitSummary" style="color:var(--text-light); margin-bottom:10px;">
+      You have <strong id="answeredCountModal">{{ answered_count }}</strong> of {{ total }} answered.
+    </div>
+    <div id="unansweredWarning" style="display:none; margin-bottom:12px; padding:10px; border-radius:8px; border:1px solid var(--warning); background: rgba(245, 158, 11, 0.1); color: var(--text);">
+      You still have <strong id="missingCount">0</strong> unanswered question(s). You can submit now or review them.
+    </div>
     <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button type="button" class="btn" id="reviewUnanswered" style="display:none;">Review Unanswered</button>
       <button type="button" class="btn" id="cancelSubmit">Cancel</button>
-      <button type="button" class="btn btn-primary" id="confirmSubmit">Submit</button>
+      <button type="button" class="btn btn-primary" id="confirmSubmit" disabled>Submit</button>
     </div>
   </div>
  </div>
@@ -162,9 +169,42 @@
   const confirmBtn = document.getElementById('confirmSubmit')
   const navField = document.getElementById('navField')
 
-  function openModal(){ modal.classList.add('open'); modal.setAttribute('aria-hidden','false') }
+  function getAnsweredCount(){
+    // Prefer sidebar count for accuracy across page navigation
+    const dots = document.querySelectorAll('.qdot');
+    const answered = document.querySelectorAll('.qdot.answered').length;
+    return dots.length ? answered : (parseInt(document.getElementById('answeredCount')?.textContent || '0',10));
+  }
+
+  function openModal(){
+    const total = {{ total }};
+    const answered = getAnsweredCount();
+    const missing = Math.max(0, total - answered);
+    const ansEl = document.getElementById('answeredCountModal');
+    if (ansEl) ansEl.textContent = String(answered);
+    const warn = document.getElementById('unansweredWarning');
+    const missEl = document.getElementById('missingCount');
+    const confirmBtn = document.getElementById('confirmSubmit');
+    const reviewBtn = document.getElementById('reviewUnanswered');
+
+    if (missEl) missEl.textContent = String(missing);
+    if (missing > 0){
+      if (warn) warn.style.display = 'block';
+      if (reviewBtn) reviewBtn.style.display = 'inline-flex';
+      if (confirmBtn) confirmBtn.disabled = false; // allow submit with unanswered
+    } else {
+      if (warn) warn.style.display = 'none';
+      if (reviewBtn) reviewBtn.style.display = 'none';
+      if (confirmBtn) confirmBtn.disabled = false;
+    }
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+  }
   function closeModal(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true') }
   if (openBtn) openBtn.addEventListener('click', openModal)
+  const openBtnBottom = document.getElementById('openSubmitBottom');
+  if (openBtnBottom) openBtnBottom.addEventListener('click', openModal)
   if (cancelBtn) cancelBtn.addEventListener('click', closeModal)
   if (confirmBtn) confirmBtn.addEventListener('click', function(){
     navField.value = 'submit'
@@ -172,6 +212,15 @@
     modal.setAttribute('aria-hidden','true')
     // submit the closest form
     document.querySelector('form.quiz-card')?.submit()
+  })
+
+  const reviewBtn = document.getElementById('reviewUnanswered')
+  if (reviewBtn) reviewBtn.addEventListener('click', function(){
+    // Go to the first unanswered question
+    const firstUnanswered = document.querySelector('.qdot:not(.answered)')
+    if (firstUnanswered && firstUnanswered.getAttribute('href')){
+      window.location.href = firstUnanswered.getAttribute('href')
+    }
   })
 
   // Countdown timer and auto-submit
